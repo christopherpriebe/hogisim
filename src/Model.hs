@@ -1,6 +1,8 @@
 module Model where
 
 import Data.Vector as V
+
+import Types
 import Model.Cell as C
 
 data AppState
@@ -21,12 +23,14 @@ initMenuState = New
 data WorkState = WS
   { mode :: ModeState
   , board :: Board
+  , cursorPos :: Coordinate
   }
 
 initWorkState :: WorkState
 initWorkState = WS
   { mode = View
   , board = initBoard
+  , cursorPos = initCursorPos
   }
 
 data ModeState
@@ -34,22 +38,16 @@ data ModeState
   | Edit
   | Run
 
-type Board = V.Vector C.Cell
+type Board = V.Vector (V.Vector C.Cell)
 
 boardSize :: Int
-boardSize = 20
+boardSize = 30
 
 initBoard :: Board
-initBoard = V.replicate (boardSize * boardSize) C.Empty
+initBoard = V.map (\i -> V.slice (i * boardSize) boardSize init1DBoard) (V.generate boardSize (\i -> i))
 
-newlineFunctionList :: [String -> Cell -> String]
-newlineFunctionList = Prelude.cycle ((Prelude.replicate (boardSize - 1) addCellToString) Prelude.++ [addCellToStringWithNewLine])
+init1DBoard :: Vector C.Cell
+init1DBoard = (V.generate (boardSize * boardSize) (\i -> C { content = C.Empty, coordinate = quotRem i boardSize }))
 
-addCellToString :: String -> Cell -> String
-addCellToString s c = s Prelude.++ (C.toString c)
-
-addCellToStringWithNewLine :: String -> Cell -> String
-addCellToStringWithNewLine s c = s Prelude.++ (C.toString c) Prelude.++ "\n"
-
-toString :: Board -> String
-toString b = Prelude.foldl (\s (c, f) -> f s c) "" (Prelude.zip (V.toList b) newlineFunctionList)
+initCursorPos :: Coordinate
+initCursorPos = (div boardSize 2, div boardSize 2)
