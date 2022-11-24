@@ -27,6 +27,8 @@ The controls should be intuitive after a short learning period and the user expe
 ## Project Update (11/23/22)
 Our application, Hogism, is split into two main components: the frontend and the backend.
 The work is split among the four group members accordingly, with Chris and Jeremey working on the frontend and Jerry and Shyama working on the backend.
+
+### Frontend updates
 The frontend architecture consists of a menu and a workspace viewer that can take any of three states: view, edit, and run.
 From the menu, the user is able to either create a new, blank workspace, or load a pre-existing workspace from a file.
 The user moves a cursor around the workspace using the arrow keys and can make edits using keyboard shortcuts/selections from a adjacent sprites menu.
@@ -44,6 +46,19 @@ Brick has an included list library for displaying menus, which will be useful wh
 Brick also has a file browser library, which will be useful for the pre-existing workspace loading feature.
 These two aforementioned features were potentially ideas that needed to be scraped in favor of a more simple approach so that the project could be finished on time.
 However, it seems things should go according to plan from here on out.
+
+### Backend updates
+The backend component is a graph structure representing the user's circuit. This graph can be used to compute results, or check for invalid inputs. This graph is not yet implemented, and could take a number of forms:
+- A static graph that is compiled from the user's circuit
+- A graph that can be navigated and mutated, e.g. via [Zippers](http://learnyouahaskell.com/zippers)
+
+The current exploratory implementation demonstrates that it is possible to compute digital logic using a graph-like structure.
+
+The main challenge for the backend team is thinking ahead to the interaction between user input and the computation for simulating the circuit's outputs. 
+Isolated from user interaction, the backend implementation for simulating logic gates is trivial. However, we may want to dynamically update the graph representation of the circuit, which is difficult using a functional approach. In addition, a compilation process may not be trivial either.
+
+Thus far the backend has a baseline implementation for logic gate simulation, so the deadline seems appropriate still.
+When the interaction between the frontend and backend components is decided, then the direction for backend implementation will be clearer and a more functional prototype can be implemented.
 
 ## Project Timeline
 | Goal | Date |
