@@ -22,7 +22,10 @@ view' (Menu Exit) = BWB.border ((menuOptions!!0) <=> (menuOptions!!1) <=> (B.wit
 --  View -> (BWB.border (B.str (toString (board ws)))) <+> (BWB.border (B.str "STATS HERE"))
 --  Edit -> (BWB.border (B.str (toString (board ws)))) <+> (BWB.border (B.str "GATES HERE"))
 --  Run -> (BWB.border (B.str (toString (board ws)))) <+> (BWB.border (B.str "RUN STATS HERE"))
-view' (Work ws) = (BWB.border (viewBoardWithCursor (board ws) (cursorPos ws))) <+> (BWB.border (B.str "STATS HERE"))
+view' (Work ws) = case (mode ws) of
+  View -> (BWB.border (viewBoardWithCursor (board ws) (cursorPos ws))) <+> (BWB.border (B.str "STATS HERE")) <=> (B.str "View")
+  Edit -> (BWB.border (viewBoardWithCursor (board ws) (cursorPos ws))) <+> (BWB.border (B.str "STATS HERE")) <=> (B.str "Edit")
+  Run -> (BWB.border (viewBoardWithCursor (board ws) (cursorPos ws))) <+> (BWB.border (B.str "STATS HERE")) <=> (B.str "Run")
 
 -- TODO: Modify these functions so Data.Vector is no longer needed
 viewBoardWithCursor :: Board -> Coordinate -> Widget Name
