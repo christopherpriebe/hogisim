@@ -3,6 +3,7 @@ module View where
 import Brick as B
 import Brick.Widgets.Border as BWB
 import Graphics.Vty as V
+import Data.Matrix as M --TODO: Remove ASAP
 import Data.Vector --TODO: Remove ASAP
 
 import Model
@@ -29,10 +30,13 @@ view' (Work ws) = case (mode ws) of
 
 -- TODO: Modify these functions so Data.Vector is no longer needed
 viewBoardWithCursor :: Board -> Coordinate -> Widget Name
-viewBoardWithCursor b cp = B.vBox (Data.Vector.toList (Data.Vector.map B.hBox (toWidgetBoard b cp)))
+viewBoardWithCursor b cp = Prelude.foldl (\acc i -> acc <=> (Data.Vector.foldl1 (<+>) (M.getRow i wb))) (Data.Vector.foldl1 (<+>) (M.getRow 1 wb)) [2..boardSize] --TODO: Fix potential bug with board sizes of 0
+  where
+    boardSize = M.nrows b
+    wb = (toWidgetBoard b cp)
 
-toWidgetBoard :: Board -> Coordinate -> Data.Vector.Vector [B.Widget Name]
-toWidgetBoard b cp = Data.Vector.map (\r -> Prelude.map (\c -> if (coordinate c) == cp then B.withAttr select (B.str (toString c)) else B.str (toString c)) (Data.Vector.toList r)) b
+toWidgetBoard :: Board -> Coordinate -> M.Matrix (Widget Name)
+toWidgetBoard b cp = fmap (\c -> if (coordinate c) == cp then B.withAttr select (B.str (toString c)) else B.str (toString c)) b
 --End TODO
 
 menuOptions :: [B.Widget Name]

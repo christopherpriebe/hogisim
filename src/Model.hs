@@ -1,6 +1,6 @@
 module Model where
 
-import Data.Vector as V
+import Data.Matrix as M
 
 import Types
 import Model.Cell as C
@@ -38,16 +38,13 @@ data ModeState
   | Edit
   | Run
 
-type Board = V.Vector (V.Vector C.Cell)
+type Board = M.Matrix C.Cell
 
 boardSize :: Int
 boardSize = 30
 
 initBoard :: Board
-initBoard = V.map (\i -> V.slice (i * boardSize) boardSize init1DBoard) (V.generate boardSize (\i -> i))
-
-init1DBoard :: Vector C.Cell
-init1DBoard = (V.generate (boardSize * boardSize) (\i -> C { content = C.Empty, coordinate = quotRem i boardSize }))
+initBoard = M.matrix boardSize boardSize (\c -> C.C { content = C.Empty, coordinate = c })
 
 initCursorPos :: Coordinate
 initCursorPos = (div boardSize 2, div boardSize 2)

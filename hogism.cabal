@@ -13,6 +13,7 @@ executable hogism
   main-is:             Main.hs
   build-depends:       base >=4.9,
                        vector,
+                       matrix,
                        vty,
                        brick
   hs-source-dirs:      src
