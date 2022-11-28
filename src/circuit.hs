@@ -14,6 +14,26 @@ data Gate
     | Unary Int Gate (Bool -> Bool)
     | Binary Int Gate Gate (Bool -> Bool -> Bool)
 
+data Input = Input Int Bool
+type Output Input
+
+data Circuit = 
+    | Inp Input
+    | Out Output
+    | BiGate PrimitiveBinaryGate Circuit Circuit
+    | UnGate PrimitiveUnaryGate Circuit
+
+    
+data PrimitiveUnaryGate = NOT | DELAY
+
+data PrimitiveBinaryGate = 
+    | AND 
+    | OR 
+    | NOR
+    | NAND
+    | XOR 
+    | XNOR
+
 solve :: Gate -> Bool
 solve (Input _ value) = value
 solve (Unary _ gate operation) = operation (solve gate)
