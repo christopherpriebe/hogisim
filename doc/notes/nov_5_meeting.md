@@ -73,7 +73,7 @@ To One Right and One Down w/ Cross:
 To One Right and One Up w/ Cross:
 +-/
 
-From One Left and One Down :
+From One Left and One Down:
 /--
 
 From One Left and One Up:
