@@ -2,6 +2,7 @@ module Control where
 
 import Data.Matrix as M --TODO: Delete
 import Brick as B
+import Brick.Widgets.List as BWL
 import Graphics.Vty as V
 
 import Model
@@ -20,18 +21,23 @@ handleEvent (Menu New) (B.VtyEvent (V.EvKey V.KEnter [])) = B.continue (Work ini
 handleEvent (Menu Load) (B.VtyEvent (V.EvKey V.KEnter [])) = B.continue (Menu Load)
 handleEvent (Menu Exit) (B.VtyEvent (V.EvKey V.KEnter [])) = B.halt (Menu Exit)
 
-handleEvent (Work (WS { mode = View, board = b, cursorPos = cp })) (B.VtyEvent (V.EvKey (V.KChar 'e') [])) = B.continue (Work (WS { mode = Edit, board = b, cursorPos = cp }))
-handleEvent (Work (WS { mode = Edit, board = b, cursorPos = cp })) (B.VtyEvent (V.EvKey (V.KChar 'v') [])) = B.continue (Work (WS { mode = View, board = b, cursorPos = cp }))
-handleEvent (Work (WS { mode = View, board = b, cursorPos = cp })) (B.VtyEvent (V.EvKey (V.KChar 'r') [])) = B.continue (Work (WS { mode = Run, board = b, cursorPos = cp }))
-handleEvent (Work (WS { mode = Run, board = b, cursorPos = cp })) (B.VtyEvent (V.EvKey (V.KChar 'v') [])) = B.continue (Work (WS { mode = View, board = b, cursorPos = cp }))
+handleEvent (Work (WS { mode = View, board = b, cursorPos = cp, editList = el })) (B.VtyEvent (V.EvKey (V.KChar '2') [])) = B.continue (Work (WS { mode = Edit, board = b, cursorPos = cp, editList = el }))
+handleEvent (Work (WS { mode = Edit, board = b, cursorPos = cp, editList = el })) (B.VtyEvent (V.EvKey (V.KChar '1') [])) = B.continue (Work (WS { mode = View, board = b, cursorPos = cp, editList = el }))
+handleEvent (Work (WS { mode = View, board = b, cursorPos = cp, editList = el })) (B.VtyEvent (V.EvKey (V.KChar '3') [])) = B.continue (Work (WS { mode = Run, board = b, cursorPos = cp, editList = el }))
+handleEvent (Work (WS { mode = Run, board = b, cursorPos = cp, editList = el })) (B.VtyEvent (V.EvKey (V.KChar '1') [])) = B.continue (Work (WS { mode = View, board = b, cursorPos = cp, editList = el }))
 
-handleEvent (Work (WS { mode = m, board = b, cursorPos = (y, x) })) (B.VtyEvent (V.EvKey V.KRight [])) = B.continue (Work (WS { mode = m, board = b, cursorPos = (y, x + 1) }))
-handleEvent (Work (WS { mode = m, board = b, cursorPos = (y, x) })) (B.VtyEvent (V.EvKey V.KLeft [])) = B.continue (Work (WS { mode = m, board = b, cursorPos = (y, x - 1) }))
-handleEvent (Work (WS { mode = m, board = b, cursorPos = (y, x) })) (B.VtyEvent (V.EvKey V.KUp [])) = B.continue (Work (WS { mode = m, board = b, cursorPos = (y - 1, x) }))
-handleEvent (Work (WS { mode = m, board = b, cursorPos = (y, x) })) (B.VtyEvent (V.EvKey V.KDown [])) = B.continue (Work (WS { mode = m, board = b, cursorPos = (y + 1, x) }))
+handleEvent (Work (WS { mode = m, board = b, cursorPos = (y, x), editList = el })) (B.VtyEvent (V.EvKey V.KRight [])) = B.continue (Work (WS { mode = m, board = b, cursorPos = (y, x + 1), editList = el }))
+handleEvent (Work (WS { mode = m, board = b, cursorPos = (y, x), editList = el })) (B.VtyEvent (V.EvKey V.KLeft [])) = B.continue (Work (WS { mode = m, board = b, cursorPos = (y, x - 1), editList = el }))
+handleEvent (Work (WS { mode = m, board = b, cursorPos = (y, x), editList = el })) (B.VtyEvent (V.EvKey V.KUp [])) = B.continue (Work (WS { mode = m, board = b, cursorPos = (y - 1, x), editList = el }))
+handleEvent (Work (WS { mode = m, board = b, cursorPos = (y, x), editList = el })) (B.VtyEvent (V.EvKey V.KDown [])) = B.continue (Work (WS { mode = m, board = b, cursorPos = (y + 1, x), editList = el }))
 
-handleEvent (Work (WS { mode = Edit, board = b, cursorPos = (y, x) })) (B.VtyEvent (V.EvKey V.KUp [V.MShift])) = B.continue (Work (WS { mode = Edit, board = M.setElem (C.nextContentForward (M.getElem y x b)) (y, x) b, cursorPos = (y, x) }))
-handleEvent (Work (WS { mode = Edit, board = b, cursorPos = (y, x) })) (B.VtyEvent (V.EvKey V.KDown [V.MShift])) = B.continue (Work (WS { mode = Edit, board = M.setElem (C.nextContentBackward (M.getElem y x b)) (y, x) b, cursorPos = (y, x) }))
+handleEvent (Work (WS { mode = Edit, board = b, cursorPos = (y, x), editList = el })) (B.VtyEvent (V.EvKey V.KUp [V.MShift])) = B.continue (Work (WS { mode = Edit, board = b, cursorPos = (y, x), editList = BWL.listMoveBy (-1) el }))
+handleEvent (Work (WS { mode = Edit, board = b, cursorPos = (y, x), editList = el })) (B.VtyEvent (V.EvKey V.KDown [V.MShift])) = B.continue (Work (WS { mode = Edit, board = b, cursorPos = (y, x), editList = BWL.listMoveBy 1 el }))
+handleEvent (Work (WS { mode = Edit, board = b, cursorPos = (y, x), editList = el })) (B.VtyEvent (V.EvKey (V.KChar 'f') [])) = B.continue (Work (WS { mode = Edit, board = M.setElem (C.setContent (M.getElem y x b) (getListSelectedElement el)) (y, x) b, cursorPos = (y, x), editList = el }))
+handleEvent (Work (WS { mode = Edit, board = b, cursorPos = (y, x), editList = el })) (B.VtyEvent (V.EvKey (V.KChar 'r') [])) = B.continue (Work (WS { mode = Edit, board = M.setElem (C.rotate (M.getElem y x b)) (y, x) b, cursorPos = (y, x), editList = el }))
+
+--handleEvent (Work (WS { mode = Edit, board = b, cursorPos = (y, x), editList = el })) (B.VtyEvent (V.EvKey V.KUp [V.MShift])) = B.continue (Work (WS { mode = Edit, board = M.setElem (C.nextContentForward (M.getElem y x b)) (y, x) b, cursorPos = (y, x), editList = el }))
+--handleEvent (Work (WS { mode = Edit, board = b, cursorPos = (y, x), editList = el })) (B.VtyEvent (V.EvKey V.KDown [V.MShift])) = B.continue (Work (WS { mode = Edit, board = M.setElem (C.nextContentBackward (M.getElem y x b)) (y, x) b, cursorPos = (y, x), editList = el }))
 
 handleEvent (Work _) (B.VtyEvent (V.EvKey V.KEsc [])) = B.continue (Menu New)
 

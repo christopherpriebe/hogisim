@@ -125,6 +125,30 @@ A full description of valid cells is listed in Appendix A.
 ```
 -+-
 ```
+## HL or LH Path to Right Path
+#### Normal
+```
+ ├─
+```
+#### ASCII Only
+## HL or LH Path to Left Path
+#### Normal
+```
+─┤ 
+```
+#### ASCII Only
+## RL or LR Path to LH Path
+#### Normal
+```
+─┴─
+```
+#### ASCII Only
+## RL or LR Path to HL Path
+#### Normal
+```
+─┬─
+```
+#### ASCII Only
 ### LR to HL or LH to RL Path
 #### Normal
 ```
@@ -164,7 +188,8 @@ A full description of valid cells is listed in Appendix A.
 ### LR or RL Buffer
 #### Normal
 ```
-┤=├
+┤=┠
+┨=├
 ```
 #### ASCII Only
 ```
@@ -173,7 +198,8 @@ A full description of valid cells is listed in Appendix A.
 ### LR or RL Inverter
 #### Normal
 ```
-┤¬├
+┤¬┠
+┨¬├
 ```
 #### ASCII Only
 ```
@@ -191,7 +217,7 @@ A full description of valid cells is listed in Appendix A.
 ### LR OR Output
 #### Normal
 ```
-│⋁├
+│⋁┠
 ```
 #### ASCII Only
 ```
@@ -218,7 +244,7 @@ OR|
 ### RL OR Output
 #### Normal
 ```
-┤⋁│
+┨⋁│
 ```
 #### ASCII Only
 ```
@@ -245,7 +271,7 @@ OR|
 ### LR AND Output
 #### Normal
 ```
-│⋀├
+│⋀┠
 ```
 #### ASCII Only
 ```
@@ -272,7 +298,7 @@ OR|
 ### RL AND Output
 #### Normal
 ```
-┤⋀│
+┨⋀│
 ```
 #### ASCII Only
 ```
@@ -299,7 +325,7 @@ OR|
 ### LR XOR Output
 #### Normal
 ```
-│⊻├
+│⊻┠
 ```
 #### ASCII Only
 ```
@@ -326,7 +352,7 @@ OR|
 ### RL XOR Output
 #### Normal
 ```
-┤⊻│
+┨⊻│
 ```
 #### ASCII Only
 ```
@@ -353,7 +379,7 @@ OR|
 ### LR NOR Output
 #### Normal
 ```
-│⊽├
+│⊽┠
 ```
 #### ASCII Only
 ```
@@ -380,7 +406,7 @@ OR|
 ### RL NOR Output
 #### Normal
 ```
-┤⊽│
+┨⊽│
 ```
 #### ASCII Only
 ```
@@ -407,7 +433,7 @@ OR|
 ### LR NAND Output
 #### Normal
 ```
-│⊼├
+│⊼┠
 ```
 #### ASCII Only
 ```
@@ -434,7 +460,7 @@ OR|
 ### RL NAND Output
 #### Normal
 ```
-┤⊼│
+┨⊼│
 ```
 #### ASCII Only
 ```
@@ -461,7 +487,7 @@ OR|
 ### LR XNOR Output
 #### Normal
 ```
-│↔├
+│↔┠
 ```
 #### ASCII Only
 ```
@@ -488,7 +514,7 @@ OR|
 ### RL XNOR Output
 #### Normal
 ```
-┤↔│
+┨↔│
 ```
 #### ASCII Only
 ```
