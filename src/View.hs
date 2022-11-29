@@ -2,45 +2,56 @@ module View where
 
 import Brick as B
 import Brick.Widgets.Border as BWB
+import Brick.Widgets.List as BWL
 import Graphics.Vty as V
 import Data.Matrix as M --TODO: Remove ASAP
 import Data.Vector --TODO: Remove ASAP
 
 import Model
-import Model.Cell
+import Model.Cell --Add rename
 import Types
 
+--TODO: Implement way to pass argument from console to only render using ASCII for certain terminal compatability
 view :: AppState -> [B.Widget Name]
 view s = [view' s]
 
 view' :: AppState -> B.Widget Name
---TODO: Find a more succinct way to represent menu strings and selected menu options
-view' (Menu New) = BWB.border ((B.withAttr select (menuOptions!!0)) <=> (menuOptions!!1) <=> (menuOptions!!2))
-view' (Menu Load) = BWB.border ((menuOptions!!0) <=> (B.withAttr select (menuOptions!!1)) <=> (menuOptions!!2))
-view' (Menu Exit) = BWB.border ((menuOptions!!0) <=> (menuOptions!!1) <=> (B.withAttr select (menuOptions!!2)))
---End TODO
---view' (Work ws) = case (mode ws) of
---  View -> (BWB.border (B.str (toString (board ws)))) <+> (BWB.border (B.str "STATS HERE"))
---  Edit -> (BWB.border (B.str (toString (board ws)))) <+> (BWB.border (B.str "GATES HERE"))
---  Run -> (BWB.border (B.str (toString (board ws)))) <+> (BWB.border (B.str "RUN STATS HERE"))
+view' (Menu ms) = case ms of
+  New -> BWB.border ((B.withAttr select menuNewWidget) <=> menuLoadWidget <=> menuExitWidget)
+  Load -> BWB.border (menuNewWidget <=> (B.withAttr select menuLoadWidget) <=> menuExitWidget)
+  Exit -> BWB.border (menuNewWidget <=> menuLoadWidget <=> (B.withAttr select menuExitWidget))
+  where
+    menuNewWidget = B.str "New Workspace"
+    menuLoadWidget = B.str "Load Workspace"
+    menuExitWidget = B.str "Exit"
 view' (Work ws) = case (mode ws) of
-  View -> (BWB.border (viewBoardWithCursor (board ws) (cursorPos ws))) <+> (BWB.border (B.str "STATS HERE")) <=> (B.str "View")
-  Edit -> (BWB.border (viewBoardWithCursor (board ws) (cursorPos ws))) <+> (BWB.border (B.str "STATS HERE")) <=> (B.str "Edit")
-  Run -> (BWB.border (viewBoardWithCursor (board ws) (cursorPos ws))) <+> (BWB.border (B.str "STATS HERE")) <=> (B.str "Run")
+  View -> vboard <=> (B.str "View") <=> vcontr <+> (BWB.border (B.str "STATS HERE"))
+  Edit -> vboard <=> (B.str "Edit") <=> econtr <+> (B.hLimit 30 (B.vLimit (boardSize + 2) (viewEditList (editList ws))))
+  Run  -> vboard <=> (B.str "Run") <=> rcontr <+> (BWB.border (B.str "STATS HERE"))
+  where
+    vboard = viewBoard (board ws) (cursorPos ws)
+    vcontr = (B.str "Controls:") <=> (B.str "Exit to Menu - \"Esc.\"") <=> (B.str "Switch to \"Edit\" - \"2\"") <=> (B.str "Switch to \"Run\" - \"3\"") <=> (B.str "Move Cursor - (Up | Down | Left | Right) Arrow")
+    econtr = (B.str "Controls:") <=> (B.str "Exit to Menu - \"Esc.\"") <=> (B.str "Switch to \"View\" - \"1\"") <=> (B.str "Move Cursor - (Up | Down | Left | Right) Arrow") <=> (B.str "Change Selection - Shift+(Up Arrow | Down Arrow)") <=> (B.str "Place Selected Cell - \"f\"") <=> (B.str "Rotate Selected Cell - \"r\"")
+    rcontr = (B.str "Controls:") <=> (B.str "Exit to Menu - \"Esc.\"") <=> (B.str "Switch to \"View\" - \"1\"") <=> (B.str "Move Cursor - (Up | Down | Left | Right) Arrow")
+
+viewBoard :: Board -> Coordinate -> Widget Name
+viewBoard b cp = (BWB.border (viewBoardNoBorder b cp))
 
 -- TODO: Modify these functions so Data.Vector is no longer needed
-viewBoardWithCursor :: Board -> Coordinate -> Widget Name
-viewBoardWithCursor b cp = Prelude.foldl (\acc i -> acc <=> (Data.Vector.foldl1 (<+>) (M.getRow i wb))) (Data.Vector.foldl1 (<+>) (M.getRow 1 wb)) [2..boardSize] --TODO: Fix potential bug with board sizes of 0
+viewBoardNoBorder :: Board -> Coordinate -> Widget Name
+viewBoardNoBorder b cp = Prelude.foldl (\acc i -> acc <=> (Data.Vector.foldl1 (<+>) (M.getRow i wb))) (Data.Vector.foldl1 (<+>) (M.getRow 1 wb)) [2..boardSize] --TODO: Fix potential bug with board sizes of 0
   where
-    boardSize = M.nrows b
     wb = (toWidgetBoard b cp)
 
 toWidgetBoard :: Board -> Coordinate -> M.Matrix (Widget Name)
 toWidgetBoard b cp = fmap (\c -> if (coordinate c) == cp then B.withAttr select (B.str (toString c)) else B.str (toString c)) b
 --End TODO
 
-menuOptions :: [B.Widget Name]
-menuOptions = [B.str "New Workspace", B.str "Load Workspace", B.str "Exit"]
+viewEditList :: BWL.GenericList String Vector (CellContent, Name) -> Widget Name
+viewEditList el = BWB.border (BWL.renderList (\b tup -> if b then B.withAttr select (viewCellContentAndName tup) else viewCellContentAndName tup) False el)
+
+viewCellContentAndName :: (CellContent, Name) -> Widget Name
+viewCellContentAndName (cc, n) = (B.str (toString' cc)) <+> (B.str " - ") <+> (B.str n)
 
 select :: B.AttrName
 select = B.attrName "select"
