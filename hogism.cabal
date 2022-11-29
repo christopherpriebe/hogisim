@@ -15,7 +15,11 @@ executable hogism
                        vector,
                        matrix,
                        vty,
-                       brick
+                       brick,
+                       Yampa,
+                       alga
+
+
   hs-source-dirs:      src
   other-modules:       Control,
                        Model,
