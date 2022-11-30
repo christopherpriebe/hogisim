@@ -1,4 +1,5 @@
-{-
+module Circuit where
+{--
 A prototype representation of connectable gate components
 
 As is, this implementation can't interface directly with a UI, because inputs
@@ -8,18 +9,20 @@ needed.
 Below is an example of an adder implemented with these gates.
 https://media.geeksforgeeks.org/wp-content/uploads/3-57.png
 -}
+{-#LANGUAGE arrows #-}
+import FRP.Yampa
 
-data Gate 
+{-data Gate 
     = Input Bool
     | Output Bool
-    | Unary Gate (Bool -> Bool)
-    | Binary Gate Gate (Bool -> Bool -> Bool)
+    | Unary (Bool -> Bool)
+    | Binary (Bool -> Bool -> Bool)
+-}
+data Node a = Node Int (SF a bool)
 
-data Node = Node Gate Int
-
-instance Graph (Node g i) where
-    empty = Input False
-    vertex x = 
+instance Graph (Node i s) where
+    empty = constant False
+    vertex (Vertex (Node _)) = 
 
 
 data Input = Input Int Bool

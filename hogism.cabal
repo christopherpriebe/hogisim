@@ -17,7 +17,7 @@ executable hogism
                        vty,
                        brick,
                        Yampa,
-                       alga
+                       algebraic-graphs
 
 
   hs-source-dirs:      src
