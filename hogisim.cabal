@@ -9,7 +9,7 @@ build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
 
-executable hogism
+executable hogisim
   main-is:             Main.hs
   build-depends:       base >=4.9,
                        vector,
