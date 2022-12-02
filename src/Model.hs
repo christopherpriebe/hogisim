@@ -48,6 +48,18 @@ type Board = M.Matrix C.Cell
 initBoard :: Board
 initBoard = M.matrix boardSize boardSize (\c -> C.C { content = C.Empty, coordinate = c })
 
+cursorRight :: Coordinate -> Coordinate
+cursorRight (y, x) = if x < boardSize then (y, x + 1) else (y, x)
+
+cursorLeft :: Coordinate -> Coordinate
+cursorLeft (y, x) = if x > 1 then (y, x - 1) else (y, x)
+
+cursorUp :: Coordinate -> Coordinate
+cursorUp (y, x) = if y > 1 then (y - 1, x) else (y, x)
+
+cursorDown :: Coordinate -> Coordinate
+cursorDown (y, x) = if y < boardSize  then (y + 1, x) else (y, x)
+
 initCursorPos :: Coordinate
 initCursorPos = (div boardSize 2, div boardSize 2)
 
