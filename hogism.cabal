@@ -18,7 +18,8 @@ executable hogism
                        brick,
                        Yampa,
                        algebraic-graphs,
-                       containers
+                       containers,
+                       unordered-containers
 
 
   hs-source-dirs:      src

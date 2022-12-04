@@ -1,0 +1,12 @@
+empty: constant false
+vertex: two inputs, initially of constant false, if inputs already set, then update their values accordingly
+overlay: take the union of all inputs, outputs, vertices, and edges
+connect: discard the second set of inputs. take the union of both output sets. for every logic gate, 
+
+graph structure: list of inputs, logic gates themselves, list of outputs
+
+issues: 
+two connections from the same node to the same node
+inputs and outputs can all feed into/off of the same node
+workaround:
+create intermediate node (node 2.0,2.1,etc)

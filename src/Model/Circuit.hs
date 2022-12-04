@@ -14,6 +14,7 @@ https://media.geeksforgeeks.org/wp-content/uploads/3-57.png
 {-# LANGUAGE RankNTypes #-}
 import FRP.Yampa
 import Data.Set
+import Data.HashMap.Strict
 --import Data.Lens
 {-data Gate 
     = Input Bool
@@ -21,9 +22,10 @@ import Data.Set
     | Unary (Bool -> Bool)
     | Binary (Bool -> Bool -> Bool)
 -}
+--first number corresponds to the gate number, the second corresponds to the gate input number
 data EndPt  = EP (Set Int) (SF a Bool)
 data Node = N Int (Bool->Bool-> Bool) (forall a. SF a Bool)
-data NodeGraph = NG {domain :: Set Node, relation :: Set (Int, Int) }
+data NodeGraph = NG {domain :: Set Node, relation ::  HashMap Int (Set Int)}
 
 emNG :: NodeGraph
 emNG = NG {domain = empty, relation = empty}
@@ -31,12 +33,14 @@ data Circuit where
   C :: Set EndPt () -> NodeGraph -> Set EndPt Bool -> Circuit
 
 
-
-instance Graph (Node a) where
-    type Vertex (Node a) = (Int, Bool->Bool->Bool)
-    empty = let x = (constant false) in Circuit (EP empty x) EmNG (EP empty x)
-    vertex (num,f) = Circuit (EP (singleton num) (Constant false)) NG{domain = Node}
-    overlay (Node i sf) (Node j sf') =
+instance Graph (Circuit) where
+    type Vertex (Circuit) = Node
+    empty = let x = (constant false) in C (EP empty x) EmNG (EP empty x)
+    vertex (num,f) = C (EP (singleton num) stream) NG{domain =singleton $ Node num f, relation = empty } (EP (singleton num))
+        where
+            stream = Constant false
+            
+    overlay (NG i sf) (Node j sf') =
 
 
 {-- data Input = Input Int Bool
