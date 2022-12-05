@@ -16,7 +16,7 @@ multipleInputsError = "Multiple inputs"
 data Node
     = Input Bool
     | Direct (Bool -> Bool) Node
-    | Gate (Bool -> Bool-> Bool) [Node]
+    | Gate (Bool -> Bool-> Bool) Node Node
 
 
 data Dir
@@ -83,7 +83,7 @@ transformCell m (C.C C.HorizontalANDInputLR coord) path fromDir
         let prevCell = m ! (coord `moveAway` fromDir)
         if getContent prevCell `elem` andGates then do
             prevGate <- transformCell m prevCell (coord:path) fromDir
-            return (Gate (&&) [inputNode, prevGate])
+            return (Gate (&&) inputNode prevGate)
         else return (Direct id inputNode)
 transformCell m (C.C C.HorizontalANDInputRL coord) path fromDir
     | fromDir == DirLeft || fromDir == DirRight = Left (coord, disconnectErrorMsg)
@@ -92,7 +92,7 @@ transformCell m (C.C C.HorizontalANDInputRL coord) path fromDir
         let prevCell = m ! (coord `moveAway` fromDir)
         if getContent prevCell `elem` andGates then do
             prevGate <- transformCell m prevCell (coord:path) fromDir
-            return (Gate (&&) [inputNode, prevGate])
+            return (Gate (&&) inputNode prevGate)
         else return (Direct id inputNode)
 transformCell m (C.C C.HorizontalANDOutputLR coord) path fromDir
     | fromDir /= DirRight = Left (coord, disconnectErrorMsg)
@@ -104,7 +104,7 @@ transformCell m (C.C C.HorizontalANDOutputLR coord) path fromDir
         if upHasGate && downHasGate then do
             prevNodeUp <- transformCell m prevCellUp (coord:path) DirDown
             prevNodeDown <- transformCell m prevCellDown (coord:path) DirDown
-            return (Gate (&&) [prevNodeUp, prevNodeDown])
+            return (Gate (&&) prevNodeUp prevNodeDown)
         else if upHasGate then do
             prevNodeUp <- transformCell m prevCellUp (coord:path) DirDown
             return (Direct id prevNodeUp)
@@ -134,8 +134,7 @@ moveAway (x, y) DirNone = (x, y)
 solve :: Node -> Bool
 solve (Input b) = b
 solve (Direct f n) = f (solve n)
-solve (Gate f ns) = foldr1 f inputs
-    where inputs = [solve n | n <- ns]
+solve (Gate f n1 n2) = f (solve n1) (solve n2)
 
 
 numRight :: [Either a b] -> Int
