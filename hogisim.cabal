@@ -14,6 +14,7 @@ executable hogisim
   build-depends:       base >=4.9,
                        vector,
                        matrix,
+                       mtl,
                        vty,
                        brick
   hs-source-dirs:      src
@@ -21,6 +22,7 @@ executable hogisim
                        Model,
                        Types,
                        View,
+                       Sim,
                        Model.Cell
 
   default-language:    Haskell2010
