@@ -16,6 +16,7 @@ type BinaryFunc = Bool -> Bool -> Bool
 disconnectErrorMsg = "Disconnect error"
 cycleDetectedErrorMsg = "Cycle"
 multipleInputsError = "Multiple inputs"
+invalidCellError = "Invalid cell"
 
 
 data Node
@@ -61,15 +62,21 @@ transform _ = []
 transformCell :: C.Cell -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
 transformCell (C.C C.LowSource _) = transformInput False
 transformCell (C.C C.HighSource _) = transformInput True
+transformCell (C.C C.UnknownOutput coord) = transformPath [DirUp, DirRight, DirDown, DirLeft, DirNone] coord
 transformCell (C.C C.HorizontalPath coord) = transformPath [DirLeft, DirRight] coord
+transformCell (C.C C.VerticalPath coord) = transformPath [DirUp, DirDown] coord
+transformCell (C.C C.PathCross coord) = transformCross coord
 transformCell (C.C C.VerticalRightPath coord) = transformPath [DirUp, DirRight, DirDown] coord
 transformCell (C.C C.HorizontalAND coord) = transformGateBody andGates coord
 transformCell (C.C C.HorizontalANDInputLR coord) = transformGateInput DirLeft (&&) andGates coord
 transformCell (C.C C.HorizontalANDInputRL coord) = transformGateInput DirRight (&&) andGates coord
 transformCell (C.C C.HorizontalANDOutputLR coord) = transformGateOutput DirRight (&&) andGates coord
 transformCell (C.C C.HorizontalANDOutputRL coord) = transformGateOutput DirLeft (&&) andGates coord
--- TODO: Make sure all cases covered
-transformCell _ = transformInput False
+transformCell (C.C _ coord) = transformInvalid coord
+
+
+transformInvalid :: T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
+transformInvalid coord _ _ = Left (coord, invalidCellError)
 
 
 transformInput :: Bool -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
@@ -81,9 +88,6 @@ transformPath allowedDirs coord m rd
     | coord `elem` visited rd = Left (coord, cycleDetectedErrorMsg)
     | fromDir rd `notElem` allowedDirs = Left (coord, disconnectErrorMsg)
     | otherwise = do
-        let depDirs = delete (fromDir rd) allowedDirs
-        let depNodes = [transformCell (m ! (coord `moveTo` depDir)) m (RD v (flipDir depDir)) | depDir <- depDirs]
-        let numValidNodes = numRight depNodes
         if numValidNodes == 0 
             then head depNodes
         else if numValidNodes > 1 
@@ -91,19 +95,18 @@ transformPath allowedDirs coord m rd
         else head (filter isRight depNodes)
         where 
             v = coord:visited rd
+            depDirs = delete (fromDir rd) allowedDirs
+            depNodes = [transformCell (m ! (coord `moveTo` depDir)) m (RD v (flipDir depDir)) | depDir <- depDirs]
+            numValidNodes = (length . filter isRight) depNodes
 
 
-transformGateBody :: [C.CellContent] -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
-transformGateBody gates coord m rd
-    | fromDir rd == DirLeft || fromDir rd == DirRight = Left (coord, disconnectErrorMsg)
-    | otherwise = do
-        if getContent depCell `elem` gates then do
-            depNode <- transformCell depCell m (RD v (fromDir rd))
-            return (Direct id depNode)
-        else Left (coord, disconnectErrorMsg)
-        where
-            depCell = m ! (coord `moveAway` fromDir rd)
-            v = coord:visited rd
+transformCross :: T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
+transformCross coord m rd
+    | coord `elem` visited rd = Left (coord, cycleDetectedErrorMsg)
+    | otherwise = transformCell depCell m (RD v (fromDir rd))
+    where
+        depCell = m ! (coord `moveAway` fromDir rd)
+        v = coord:visited rd
 
 
 transformUnaryGate :: Dir -> UnaryFunc -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
@@ -113,6 +116,17 @@ transformUnaryGate outputDir f coord m rd
         depNode <- transformCell (m ! (coord `moveAway` fromDir rd)) m (RD v (fromDir rd))
         return (Direct f depNode)
         where
+            v = coord:visited rd
+
+
+transformGateBody :: [C.CellContent] -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
+transformGateBody gates coord m rd
+    | fromDir rd == DirLeft || fromDir rd == DirRight = Left (coord, disconnectErrorMsg)
+    | otherwise = do
+        if getContent depCell `elem` gates then transformCell depCell m (RD v (fromDir rd))
+        else Left (coord, disconnectErrorMsg)
+        where
+            depCell = m ! (coord `moveAway` fromDir rd)
             v = coord:visited rd
 
 
@@ -138,12 +152,8 @@ transformGateOutput outputDir f gates coord m rd
             depNodeUp <- transformCell depCellUp m (RD v DirDown)
             depNodeDown <- transformCell depCellDown m (RD v DirUp)
             return (Gate f depNodeUp depNodeDown)
-        else if upHasGate then do
-            depNodeUp <- transformCell depCellUp m (RD v DirDown)
-            return (Direct id depNodeUp)
-        else if downHasGate then do
-            depNodeDown <- transformCell depCellDown m (RD v DirUp)
-            return (Direct id depNodeDown)
+        else if upHasGate then transformCell depCellUp m (RD v DirDown)
+        else if downHasGate then  transformCell depCellDown m (RD v DirUp)
         else Left (coord, disconnectErrorMsg)
         where
             depCellUp = m ! (coord `moveTo` DirUp)
@@ -175,7 +185,3 @@ flipDir DirRight = DirLeft
 flipDir DirDown = DirUp
 flipDir DirLeft = DirRight
 flipDir DirNone = DirNone
-
-
-numRight :: [Either a b] -> Int
-numRight = length . filter isRight
