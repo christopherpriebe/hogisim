@@ -29,7 +29,8 @@ executable hogisim
 test-suite tests
   default-language: Haskell98
   type:              exitcode-stdio-1.0
-  hs-source-dirs:    tests
+  hs-source-dirs:    tests, src
   ghc-options:       -W -threaded
   main-is:           Test.hs
-  build-depends:     base >=4.9, process
+  build-depends:     base >=4.9, HUnit, brick, vector, matrix
+  other-modules:     Types
