@@ -15,77 +15,63 @@ https://media.geeksforgeeks.org/wp-content/uploads/3-57.png
 import FRP.Yampa
 import Data.Set
 import Data.HashMap.Strict
+import Algebra.Graph
+import Data.Set.Monad
 --import Data.Lens
-{-data Gate 
-    = Input Bool
-    | Output Bool
-    | Unary (Bool -> Bool)
-    | Binary (Bool -> Bool -> Bool)
--}
+
+
 --first number corresponds to the gate number, the second corresponds to the gate input number
-data EndPt  = EP (Set Int) (SF a Bool)
+--type InputSet = HashMap
+type Input  = (Set (Int, Int))
+data Output = O Int (SF a Bool)
 data Node = N Int (Bool->Bool-> Bool) (forall a. SF a Bool)
-data NodeGraph = NG {domain :: Set Node, relation ::  HashMap Int (Set Int)}
+type NodeMap = NM AdjacencyIntMap (HashMap.Strict Int Node)
 
-emNG :: NodeGraph
-emNG = NG {domain = empty, relation = empty}
+emNG :: NodeMap
+emNG = empty
+
 data Circuit where
-  C :: Set EndPt () -> NodeGraph -> Set EndPt Bool -> Circuit
+  C :: Set Input -> AdjacencyMap Node -> Set Output -> Circuit
 
+recalculate :: AdjacencyIntMap -> NodeMap -> NodeMap
+
+instance Ord Node where
+  (<=) (N i _ _) (N i' _ _) = i <= i'
 
 instance Graph (Circuit) where
     type Vertex (Circuit) = Node
-    empty = let x = (constant false) in C (EP empty x) EmNG (EP empty x)
-    vertex (num,f) = C (EP (singleton num) stream) NG{domain =singleton $ Node num f, relation = empty } (EP (singleton num))
-        where
-            stream = Constant false
-            
-    overlay (NG i sf) (Node j sf') =
+    empty = (C (EP empty) empty empty (EP -1 (constant false)))
+
+    vertex (i, Node f stream) = C (fromList [(singleton (i,0)), singleton (i, 1) ]) 
+                                  (vertex i)
+                                  (insert i node empt)
+                                  (O i (arr f))
+    overlay (C si aim nm so) (C si' aim' nm' so') = C (mergeInputs si si') (aim + aim') (union so so')
+      where
+        mergeInputs si si' = fromList (u ++ map (\s -> [a | a <- s, not (isSubsetOf a (join u))]) [si, si'])
+          where 
+            u = fromList [union a b | a <- si, b <- si', not $ disjoint a b]
+        graphCheck aim'' = (gmap (\n -> if member n diff then (recLoop n) else n) loops)
+        --overlay <function turning new diff set into graph> (map recLoop diff) (scc aim) 
+          where
+            loops = topSort . scc aim''
+            diff = (difference (vertexSet . loops) (vertexSet . scc aim))
+            -- <edge relation of merged graph with which to reconstruct merged graph with updated nodes>
+
+        recLoop g aim nodeSet = 
+          where
+            s = vertexSet g
 
 
-{-- data Input = Input Int Bool
-type Output Input
 
-data Circuit = 
-    | Inp Input
-    | Out Output
-    | BiGate PrimitiveBinaryGate Circuit Circuit
-    | UnGate PrimitiveUnaryGate Circuit
+        updateNodes aim'' = (do
+          n <- (vertexSet aim)
+          diffn <-difference (preset n aim'') (preset n aim)
+          return diffn) 
+          where
+            list = vertexList 
 
-    
-data PrimitiveUnaryGate = NOT | DELAY
-
-data PrimitiveBinaryGate = 
-    | AND 
-    | OR 
-    | NOR
-    | NAND
-    | XOR 
-    | XNOR
-
-solve :: Gate -> Bool
-solve (Input _ value) = value
-solve (Unary _ gate operation) = operation (solve gate)
-solve (Binary _ gateA gateB operation) = operation (solve gateA) (solve gateB)
-
-xor :: Bool -> Bool -> Bool
-xor True b = not b
-xor a True = not a
-xor _ _ = False
-
-a = Input 0 False
-b = Input 1 False
-carry = Input 2 True
-
-xor1 = Binary 3 a b xor
-outSum = Binary 4 xor1 carry xor
-and1 = Binary 5 carry xor1 (&&)
-and2 = Binary 6 a b (&&)
-outCarry = Binary 7 and1 and2 (||) --}
-
--- >>> solve outCarry
--- False
-
--- >>> solve outSum
--- True
-
+        
+        
+          
+    connect

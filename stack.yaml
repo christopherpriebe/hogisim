@@ -4,5 +4,7 @@ packages:
   - '.'
 extra-deps: 
   - Yampa-0.13.7
+  - Cabal-syntax-3.8.1.0
+  - set-monad-0.3.0.0
 allow-newer: true
 compiler: ghc-8.10.7

@@ -19,7 +19,9 @@ executable hogism
                        Yampa,
                        algebraic-graphs,
                        containers,
-                       unordered-containers
+                       unordered-containers,
+                       set-monad,
+                       Cabal-syntax
 
 
   hs-source-dirs:      src

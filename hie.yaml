@@ -1,0 +1,25 @@
+cradle:
+  stack:
+    - path: "./tests/Test.hs"
+      component: "hogism:test:tests"
+
+    - path: "./src/Main.hs"
+      component: "hogism:exe:hogism"
+
+    - path: "./src/Control.hs"
+      component: "hogism:exe:hogism"
+
+    - path: "./src/Model.hs"
+      component: "hogism:exe:hogism"
+
+    - path: "./src/Types.hs"
+      component: "hogism:exe:hogism"
+
+    - path: "./src/View.hs"
+      component: "hogism:exe:hogism"
+
+    - path: "./src/Model/Cell.hs"
+      component: "hogism:exe:hogism"
+
+    - path: "./src/Model/Circuit.hs"
+      component: "hogism:exe:hogism"

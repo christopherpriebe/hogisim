@@ -1,5 +1,5 @@
 empty: constant false
-vertex: two inputs, initially of constant false, if inputs already set, then update their values accordingly
+vertex: two inputs, initially of constant false, if inputs already set, then update their values accordingly. one output 
 overlay: take the union of all inputs, outputs, vertices, and edges
 connect: discard the second set of inputs. take the union of both output sets. for every logic gate, 
 
@@ -10,3 +10,15 @@ two connections from the same node to the same node
 inputs and outputs can all feed into/off of the same node
 workaround:
 create intermediate node (node 2.0,2.1,etc)
+find most recent node common to all outputs
+find most recent node common to all inputs		
+							
+							
+when user places input:
+
+	input enters map of inputs
+	when input is mapped to gate,
+		set of appropriate input in graph is updated to include new gate
+		overall stream is changed accordingly
+			(is there a way to make changes incremental?)
+			
