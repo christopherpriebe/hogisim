@@ -21,6 +21,7 @@ executable hogisim
   other-modules:       Control,
                        Model,
                        Types,
+                       Bool,
                        View,
                        Sim,
                        Model.Cell
