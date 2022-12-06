@@ -18,7 +18,11 @@ handleEvent (Menu Load) (B.VtyEvent (V.EvKey V.KDown [])) = B.continue (Menu Exi
 handleEvent (Menu Exit) (B.VtyEvent (V.EvKey V.KDown [])) = B.continue (Menu New)
 
 handleEvent (Menu New) (B.VtyEvent (V.EvKey V.KEnter [])) = B.continue (Work initWorkState)
-handleEvent (Menu Load) (B.VtyEvent (V.EvKey V.KEnter [])) = B.continue (Menu Load)
+handleEvent (Menu Load) (B.VtyEvent (V.EvKey V.KEnter [])) = B.suspendAndResume $ do
+                                                                                    b <-readFile "out.hgs"
+                                                                                    return (Work initWorkState)
+                                                                                    -- let loadedWorkState = WS {mode = View, board = b::Board, cursorPos = initCursorPos, editList = initEditList}
+                                                                                    -- return (Work loadedWorkState)
 handleEvent (Menu Exit) (B.VtyEvent (V.EvKey V.KEnter [])) = B.halt (Menu Exit)
 
 handleEvent (Work (WS { mode = View, board = b, cursorPos = cp, editList = el })) (B.VtyEvent (V.EvKey (V.KChar '2') [])) = B.continue (Work (WS { mode = Edit, board = b, cursorPos = cp, editList = el }))
@@ -37,6 +41,9 @@ handleEvent (Work (WS { mode = Edit, board = b, cursorPos = (y, x), editList = e
 handleEvent (Work (WS { mode = Edit, board = b, cursorPos = (y, x), editList = el })) (B.VtyEvent (V.EvKey (V.KChar 'r') [])) = B.continue (Work (WS { mode = Edit, board = M.setElem (C.rotate (M.getElem y x b)) (y, x) b, cursorPos = (y, x), editList = el }))
 handleEvent (Work (WS { mode = Edit, board = b, cursorPos = (y, x), editList = el })) (B.VtyEvent (V.EvKey (V.KChar 'd') [])) = B.continue (Work (WS { mode = Edit, board = M.setElem (C.setContent (M.getElem y x b) C.Empty) (y, x) b, cursorPos = (y, x), editList = el }))
 
+handleEvent (Work (WS { mode = View, board = b, cursorPos = cp, editList = el })) (B.VtyEvent (V.EvKey (V.KChar 's') [])) = B.suspendAndResume $ do
+                                                                                                                                                    writeFile "out.hgs" (show b)
+                                                                                                                                                    return (Work (WS { mode = View, board = b, cursorPos = cp, editList = el }))
 --handleEvent (Work (WS { mode = Edit, board = b, cursorPos = (y, x), editList = el })) (B.VtyEvent (V.EvKey V.KUp [V.MShift])) = B.continue (Work (WS { mode = Edit, board = M.setElem (C.nextContentForward (M.getElem y x b)) (y, x) b, cursorPos = (y, x), editList = el }))
 --handleEvent (Work (WS { mode = Edit, board = b, cursorPos = (y, x), editList = el })) (B.VtyEvent (V.EvKey V.KDown [V.MShift])) = B.continue (Work (WS { mode = Edit, board = M.setElem (C.nextContentBackward (M.getElem y x b)) (y, x) b, cursorPos = (y, x), editList = el }))
 
