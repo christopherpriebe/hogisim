@@ -96,8 +96,9 @@ xnorGates =
     ]
 
 
-transform :: M.Matrix C.Cell -> [Node]
-transform _ = []
+transform :: M.Matrix C.Cell -> [Either NodeError Node]
+transform m = [transformCell outputCell m (RD [] DirNone) | outputCell <- outputCells]
+    where outputCells = [m ! (x, y) | x <- [0..T.boardSize], y <- [0..T.boardSize], getContent (m ! (x, y)) == C.UnknownOutput]
 
 
 transformCell :: C.Cell -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
