@@ -31,6 +31,10 @@ solve (Input b) = b
 solve (Direct f n) = f (solve n)
 solve (Gate f n1 n2) = f (solve n1) (solve n2)
 
+-- >>> circuit = Gate (&&) (Input True) (Direct not (Input False))
+-- >>> solve circuit
+-- True
+
 
 data RecursionData = RD
   { visited :: [T.Coordinate]
@@ -191,12 +195,10 @@ transformPath allowedDirs coord m rd
             numValidNodes = (length . filter isRight) depNodes
 
 transformCross :: T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
-transformCross coord m rd
-    | coord `elem` visited rd = Left [(coord, cycleDetectedErrorMsg)]
-    | otherwise = do
-        depCoord <- moveAway coord m (fromDir rd)
-        let depCell = m ! depCoord
-        transformCell depCell m (RD v (fromDir rd))
+transformCross coord m rd = do
+    depCoord <- moveAway coord m (fromDir rd)
+    let depCell = m ! depCoord
+    transformCell depCell m (RD v (fromDir rd))
     where
         v = coord:visited rd
 
