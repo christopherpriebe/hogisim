@@ -98,7 +98,7 @@ xnorGates =
 
 transform :: M.Matrix C.Cell -> [Either [NodeError] Node]
 transform m = [transformCell outputCell m (RD [] DirNone) | outputCell <- outputCells]
-    where outputCells = [m ! (x, y) | x <- [0..T.boardSize], y <- [0..T.boardSize], getContent (m ! (x, y)) == C.UnknownOutput]
+    where outputCells = [m ! (x, y) | x <- [1..T.boardSize], y <- [1..T.boardSize], getContent (m ! (x, y)) == C.UnknownOutput]
 
 
 solveCell :: M.Matrix C.Cell -> T.Coordinate -> Either [NodeError] Bool

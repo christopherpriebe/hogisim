@@ -54,13 +54,11 @@ handleViewEvent ws (B.VtyEvent (V.EvKey (V.KChar '3') [])) = B.continue (Model.W
     wsConsole = Model.addConsoleMessage ws "Switched from \"View\" to \"Run\""
     wsMode = Model.setMode wsConsole Model.Run
     newWS = Model.toRun wsMode
-    newWS = wsMode
-handleViewEvent ws (B.VtyEvent (V.EvKey (V.KChar 's') [])) = B.suspendAndResume 
+handleViewEvent ws (B.VtyEvent (V.EvKey (V.KChar 's') [])) = B.suspendAndResume
     do 
         putStrLn "Please enter a file name and press \"Enter\" key: "
         filename <- getLine;
         writeFile filename (Model.toFileString ws)
-        -- writeFile "out.hgs" (Model.toFileString ws)
         return (Model.Work ws)
 handleViewEvent ws _ = B.continue (Model.Work ws)
 
