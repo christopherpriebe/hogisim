@@ -7,6 +7,7 @@ import Model
 import Model.Cell
 import Sim
 import Data.Either
+import Data.Vector.Fusion.Bundle.Size (Size(Unknown))
 
 
 toBoard :: [[CellContent]] -> Board
@@ -30,7 +31,12 @@ andGate = [ [Empty, Empty, Empty, Empty, Empty]
           , [Empty, HighSource, HorizontalANDInputLR, Empty, Empty]
           , [Empty, Empty, Empty, Empty, Empty]
           ]
-
+        
+multiNorGate = [ [LowSource, HorizontalNORInputLR, Empty, Empty]
+          , [LowSource, HorizontalNORInputLR, Empty, Empty]
+          , [LowSource, HorizontalNORInputLR, Empty, Empty]
+          , [Empty, HorizontalNOROutputLR, UnknownOutput, Empty]
+          ]
 
 halfAdder = [ [HighSource, HorizontalInverterLR, HorizontalPath, HorizontalDownPath, HorizontalANDInputLR, Empty, Empty]
             , [Empty, Empty, Empty, VerticalPath, HorizontalANDOutputLR, UnknownOutput, Empty]
@@ -103,6 +109,9 @@ testSolvePathInputOutput = TestLabel "An output connected to a high source" (Tes
 
 testSolveAnd = TestLabel "An output from an AND of two high sources" (TestCase (fromRight False (solveCell b (3, 4)) @=? True))
   where b = toBoard andGate
+
+testSolveMultiNor = TestLabel "An output from a NOR of three low sources" (TestCase (fromRight False (solveCell b (4, 3)) @=? True))
+  where b = toBoard multiNorGate
 
 testSolveHalfAdder = TestList 
   [ TestLabel "The carry output of a half-adder" (TestCase (fromRight True (solveCell b (2, 6)) @=? False))

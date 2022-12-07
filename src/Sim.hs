@@ -130,33 +130,33 @@ transformCell (C.C C.HorizontalInverterLR coord) = transformUnaryGate DirRight n
 transformCell (C.C C.HorizontalInverterRL coord) = transformUnaryGate DirLeft not coord
 transformCell (C.C C.HorizontalORInputLR coord) = transformGateInput DirLeft (||) orGates coord
 transformCell (C.C C.HorizontalORInputRL coord) = transformGateInput DirRight (||) orGates coord
-transformCell (C.C C.HorizontalOROutputLR coord) = transformGateOutput DirRight (||) orGates coord
-transformCell (C.C C.HorizontalOROutputRL coord) = transformGateOutput DirLeft (||) orGates coord
+transformCell (C.C C.HorizontalOROutputLR coord) = transformGateOutput DirRight (||) False orGates coord
+transformCell (C.C C.HorizontalOROutputRL coord) = transformGateOutput DirLeft (||) False orGates coord
 transformCell (C.C C.HorizontalOR coord) = transformGateBody orGates coord
 transformCell (C.C C.HorizontalANDInputLR coord) = transformGateInput DirLeft (&&) andGates coord
 transformCell (C.C C.HorizontalANDInputRL coord) = transformGateInput DirRight (&&) andGates coord
-transformCell (C.C C.HorizontalANDOutputLR coord) = transformGateOutput DirRight (&&) andGates coord
-transformCell (C.C C.HorizontalANDOutputRL coord) = transformGateOutput DirLeft (&&) andGates coord
+transformCell (C.C C.HorizontalANDOutputLR coord) = transformGateOutput DirRight (&&) False andGates coord
+transformCell (C.C C.HorizontalANDOutputRL coord) = transformGateOutput DirLeft (&&) False andGates coord
 transformCell (C.C C.HorizontalAND coord) = transformGateBody andGates coord
 transformCell (C.C C.HorizontalXORInputLR coord) = transformGateInput DirLeft B.xor xorGates coord
 transformCell (C.C C.HorizontalXORInputRL coord) = transformGateInput DirRight B.xor xorGates coord
-transformCell (C.C C.HorizontalXOROutputLR coord) = transformGateOutput DirRight B.xor xorGates coord
-transformCell (C.C C.HorizontalXOROutputRL coord) = transformGateOutput DirLeft B.xor xorGates coord
+transformCell (C.C C.HorizontalXOROutputLR coord) = transformGateOutput DirRight B.xor False xorGates coord
+transformCell (C.C C.HorizontalXOROutputRL coord) = transformGateOutput DirLeft B.xor False xorGates coord
 transformCell (C.C C.HorizontalXOR coord) = transformGateBody xorGates coord
-transformCell (C.C C.HorizontalNORInputLR coord) = transformGateInput DirLeft B.nor norGates coord
-transformCell (C.C C.HorizontalNORInputRL coord) = transformGateInput DirRight B.nor norGates coord
-transformCell (C.C C.HorizontalNOROutputLR coord) = transformGateOutput DirRight B.nor norGates coord
-transformCell (C.C C.HorizontalNOROutputRL coord) = transformGateOutput DirLeft B.nor norGates coord
+transformCell (C.C C.HorizontalNORInputLR coord) = transformGateInput DirLeft (||) norGates coord
+transformCell (C.C C.HorizontalNORInputRL coord) = transformGateInput DirRight (||) norGates coord
+transformCell (C.C C.HorizontalNOROutputLR coord) = transformGateOutput DirRight (||) True norGates coord
+transformCell (C.C C.HorizontalNOROutputRL coord) = transformGateOutput DirLeft (||) True norGates coord
 transformCell (C.C C.HorizontalNOR coord) = transformGateBody norGates coord
-transformCell (C.C C.HorizontalNANDInputLR coord) = transformGateInput DirLeft B.nand nandGates coord
-transformCell (C.C C.HorizontalNANDInputRL coord) = transformGateInput DirRight B.nand nandGates coord
-transformCell (C.C C.HorizontalNANDOutputLR coord) = transformGateOutput DirRight B.nand nandGates coord
-transformCell (C.C C.HorizontalNANDOutputRL coord) = transformGateOutput DirLeft B.nand nandGates coord
+transformCell (C.C C.HorizontalNANDInputLR coord) = transformGateInput DirLeft (&&) nandGates coord
+transformCell (C.C C.HorizontalNANDInputRL coord) = transformGateInput DirRight (&&) nandGates coord
+transformCell (C.C C.HorizontalNANDOutputLR coord) = transformGateOutput DirRight (&&) True nandGates coord
+transformCell (C.C C.HorizontalNANDOutputRL coord) = transformGateOutput DirLeft (&&) True nandGates coord
 transformCell (C.C C.HorizontalNAND coord) = transformGateBody nandGates coord
-transformCell (C.C C.HorizontalXNORInputLR coord) = transformGateInput DirLeft B.xnor xnorGates coord
-transformCell (C.C C.HorizontalXNORInputRL coord) = transformGateInput DirRight B.xnor xnorGates coord
-transformCell (C.C C.HorizontalXNOROutputLR coord) = transformGateOutput DirRight B.xnor xnorGates coord
-transformCell (C.C C.HorizontalXNOROutputRL coord) = transformGateOutput DirLeft B.xnor xnorGates coord
+transformCell (C.C C.HorizontalXNORInputLR coord) = transformGateInput DirLeft B.xor xnorGates coord
+transformCell (C.C C.HorizontalXNORInputRL coord) = transformGateInput DirRight B.xor xnorGates coord
+transformCell (C.C C.HorizontalXNOROutputLR coord) = transformGateOutput DirRight B.xor True xnorGates coord
+transformCell (C.C C.HorizontalXNOROutputRL coord) = transformGateOutput DirLeft B.xor True xnorGates coord
 transformCell (C.C C.HorizontalXNOR coord) = transformGateBody xnorGates coord
 transformCell (C.C _ coord) = transformInvalid coord
 
@@ -238,8 +238,8 @@ transformGateInput inputDir f gates coord m rd
         where
             v = coord:visited rd
 
-transformGateOutput :: Dir -> BinaryFunc -> [C.CellContent] -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
-transformGateOutput outputDir f gates coord m rd
+transformGateOutput :: Dir -> BinaryFunc -> Bool -> [C.CellContent] -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
+transformGateOutput outputDir f invert gates coord m rd
     | fromDir rd /= outputDir = Left [(coord, disconnectErrorMsg)]
     | otherwise = do
         let depCoordUp = moveTo coord m DirUp
@@ -252,19 +252,32 @@ transformGateOutput outputDir f gates coord m rd
             if upHasGate && downHasGate then do
                 depNodeUp <- transformCell depCellUp m (RD v DirDown)
                 depNodeDown <- transformCell depCellDown m (RD v DirUp)
-                return (Gate f depNodeUp depNodeDown)
-            else if upHasGate then transformCell depCellUp m (RD v DirDown)
-            else if downHasGate then transformCell depCellDown m (RD v DirUp)
+                if invert then return (Direct not (Gate f depNodeUp depNodeDown))
+                else return (Gate f depNodeUp depNodeDown)
+            else if upHasGate then do
+                depNode <- transformCell depCellUp m (RD v DirDown)
+                if invert then return (Direct not depNode)
+                else return depNode
+            else if downHasGate then do
+                depNode <- transformCell depCellDown m (RD v DirUp)
+                if invert then return (Direct not depNode)
+                else return depNode
             else Left [(coord, disconnectErrorMsg)]
         else if isRight depCoordUp then do
             let depCellUp = m ! fromRight (0, 0) depCoordUp
             let upHasGate = getContent depCellUp `elem` gates
-            if upHasGate then transformCell depCellUp m (RD v DirDown)
+            if upHasGate then do
+                depNode <- transformCell depCellUp m (RD v DirDown)
+                if invert then return (Direct not depNode)
+                else return depNode
             else Left [(coord, disconnectErrorMsg)]
         else if isRight depCoordDown then do
             let depCellDown = m ! fromRight (0, 0) depCoordDown
             let downHasGate = getContent depCellDown `elem` gates
-            if downHasGate then transformCell depCellDown m (RD v DirUp)
+            if downHasGate then do
+                depNode <- transformCell depCellDown m (RD v DirUp)
+                if invert then return (Direct not depNode)
+                else return depNode
             else Left [(coord, disconnectErrorMsg)]
         else Left [(coord, disconnectErrorMsg)]
         where
