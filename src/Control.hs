@@ -67,7 +67,7 @@ handleEditEvent ws (B.VtyEvent (V.EvKey (V.KChar '1') [])) = B.continue (Model.W
   where
     gEither = Vec.fromList (Sim.transform (Model.getBoard ws))
     isError = Vec.foldl (\b e -> case e of { Left _ -> True; Right _ -> if b then True else False }) False gEither
-    errors = Vec.foldl (\a e -> case e of { Left err -> a Vec.++ (Vec.singleton (snd err)); Right _ -> a }) Vec.empty gEither
+    errors = Vec.foldl (\a e -> case e of { Left err -> a Vec.++ (Vec.map (\e -> (show (fst e)) Prelude.++ " - " Prelude.++ (snd e)) (Vec.fromList err)); Right _ -> a }) Vec.empty gEither
     g = Vec.map (\elem -> case elem of { Left e -> Sim.Input True; Right n -> n }) gEither
     wsConsole = Model.addConsoleMessage ws "Switched from \"Edit\" to \"View\""
     wsMode = Model.setMode wsConsole Model.View
