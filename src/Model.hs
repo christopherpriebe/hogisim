@@ -27,7 +27,10 @@ initMenuState = New
 data WorkState = WS
   { mode :: ModeState
   , board :: Board
+  , prevBoard :: V.Vector Board
+  , graph :: V.Vector S.Node
   , cursorPos :: Coordinate
+  , console :: V.Vector String
   , editList :: BWL.GenericList String V.Vector (C.CellContent, Name)
   }
 
@@ -37,8 +40,17 @@ getMode ws = mode ws
 getBoard :: WorkState -> Board
 getBoard ws = board ws
 
+getPrevBoard :: WorkState -> V.Vector Board
+getPrevBoard ws = prevBoard ws
+
+getGraph :: WorkState -> V.Vector S.Node
+getGraph ws = graph ws
+
 getCursorPos :: WorkState -> Coordinate
 getCursorPos ws = cursorPos ws
+
+getConsole :: WorkState -> V.Vector String
+getConsole ws = console ws
 
 getEditList :: WorkState -> BWL.GenericList String V.Vector (C.CellContent, Name)
 getEditList ws = editList ws
@@ -47,7 +59,10 @@ setMode :: WorkState -> ModeState -> WorkState
 setMode ws ms = WS
   { mode = ms
   , board = getBoard ws
+  , prevBoard = getPrevBoard ws
+  , graph = getGraph ws
   , cursorPos = getCursorPos ws
+  , console = getConsole ws
   , editList = getEditList ws
   }
 
@@ -55,7 +70,32 @@ setBoard :: WorkState -> Board -> WorkState
 setBoard ws b = WS
   { mode = getMode ws
   , board = b
+  , prevBoard = getPrevBoard ws
+  , graph = getGraph ws
   , cursorPos = getCursorPos ws
+  , console = getConsole ws
+  , editList = getEditList ws
+  }
+
+setPrevBoard :: WorkState -> V.Vector Board -> WorkState
+setPrevBoard ws pb = WS
+  { mode = getMode ws
+  , board = getBoard ws
+  , prevBoard = pb
+  , graph = getGraph ws
+  , cursorPos = getCursorPos ws
+  , console = getConsole ws
+  , editList = getEditList ws
+  }
+
+setGraph :: WorkState -> V.Vector S.Node -> WorkState
+setGraph ws g = WS
+  { mode = getMode ws
+  , board = getBoard ws
+  , prevBoard = getPrevBoard ws
+  , graph = g
+  , cursorPos = getCursorPos ws
+  , console = getConsole ws
   , editList = getEditList ws
   }
 
@@ -63,7 +103,21 @@ setCursorPos :: WorkState -> Coordinate -> WorkState
 setCursorPos ws cp = WS
   { mode = getMode ws
   , board = getBoard ws
+  , prevBoard = getPrevBoard ws
+  , graph = getGraph ws
   , cursorPos = cp
+  , console = getConsole ws
+  , editList = getEditList ws
+  }
+
+setConsole :: WorkState -> V.Vector String -> WorkState
+setConsole ws vs = WS
+  { mode = getMode ws
+  , board = getBoard ws
+  , prevBoard = getPrevBoard ws
+  , graph = getGraph ws
+  , cursorPos = getCursorPos ws
+  , console = vs
   , editList = getEditList ws
   }
 
@@ -71,7 +125,10 @@ setEditList :: WorkState -> BWL.GenericList String V.Vector (C.CellContent, Name
 setEditList ws el = WS
   { mode = getMode ws
   , board = getBoard ws
+  , prevBoard = getPrevBoard ws
+  , graph = getGraph ws
   , cursorPos = getCursorPos ws
+  , console = getConsole ws
   , editList = el
   }
 
@@ -111,6 +168,9 @@ moveCursorPosDown ws = moveCursorPos ws cursorDown
 moveCursorPos :: WorkState -> (Coordinate -> Coordinate) -> WorkState
 moveCursorPos ws f = setCursorPos ws (f (getCursorPos ws))
 
+addConsoleMessage :: WorkState -> String -> WorkState
+addConsoleMessage ws s = setConsole ws (addToConsole (getConsole ws) s)
+
 moveEditListCursorUp :: WorkState -> WorkState
 moveEditListCursorUp ws = setEditList ws (BWL.listMoveBy (-1) (getEditList ws))
 
@@ -127,7 +187,10 @@ initWorkState :: WorkState
 initWorkState = WS
   { mode = View
   , board = initBoard
+  , prevBoard = initPrevBoard
+  , graph = initGraph
   , cursorPos = initCursorPos
+  , console = initConsole
   , editList = initEditList
   }
 
@@ -140,6 +203,12 @@ type Board = M.Matrix C.Cell
 
 initBoard :: Board
 initBoard = M.matrix boardSize boardSize (\c -> C.C { content = C.Empty, coordinate = c })
+
+initPrevBoard :: V.Vector Board
+initPrevBoard = V.empty
+
+initGraph :: V.Vector S.Node
+initGraph = V.empty
 
 cursorRight :: Coordinate -> Coordinate
 cursorRight (y, x) = if x < boardSize then (y, x + 1) else (y, x)
@@ -156,5 +225,16 @@ cursorDown (y, x) = if y < boardSize  then (y + 1, x) else (y, x)
 initCursorPos :: Coordinate
 initCursorPos = (div boardSize 2, div boardSize 2)
 
+addToConsole :: V.Vector String -> String -> V.Vector String
+addToConsole c s
+  | V.length c < consoleSize = V.snoc c s
+  | otherwise = V.tail (V.snoc c s)
+
+initConsole :: V.Vector String
+initConsole = V.replicate consoleSize " "
+
 initEditList :: BWL.GenericList String V.Vector (C.CellContent, Name)
 initEditList = BWL.list "editList" (C.placeableCellContents) 1
+
+--fromFileFormat :: String -> Board
+--fromFileFormat s = M.matrix boardSize boardSize (\(y, x) -> )
