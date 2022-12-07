@@ -51,7 +51,7 @@ handleViewEvent ws (B.VtyEvent (V.EvKey (V.KChar '3') [])) = B.continue (Model.W
   where
     wsConsole = Model.addConsoleMessage ws "Switched from \"View\" to \"Run\""
     wsMode = Model.setMode wsConsole Model.Run
-    newWS = wsMode
+    newWS = Model.toRun wsMode
 handleViewEvent ws (B.VtyEvent (V.EvKey (V.KChar 's') [])) = B.suspendAndResume (do {writeFile "out.hgs" (Model.toFileString ws); return (Model.Work ws)})
 handleViewEvent ws _ = B.continue (Model.Work ws)
 
@@ -62,7 +62,10 @@ handleEditEvent ws (B.VtyEvent (V.EvKey (V.KChar '1') [])) = B.continue (Model.W
     isError = Vec.foldl (\b e -> case e of { Left _ -> True; Right _ -> if b then True else False }) False gEither
     errors = Vec.foldl (\a e -> case e of { Left err -> a Vec.++ (Vec.singleton (snd err)); Right _ -> a }) Vec.empty gEither
     g = Vec.map (\elem -> case elem of { Left e -> Sim.Input True; Right n -> n }) gEither
-    newWS = if isError then Model.addConsoleMessages ws errors else Model.setMode (Model.setGraph ws g) Model.View
+    wsConsole = Model.addConsoleMessage ws "Switched from \"Edit\" to \"View\""
+    wsMode = Model.setMode wsConsole Model.View
+    wsGraph = Model.setGraph wsMode g
+    newWS = if isError then Model.addConsoleMessages ws errors else wsGraph
 handleEditEvent ws (B.VtyEvent (V.EvKey V.KUp [V.MShift])) = B.continue (Model.Work (Model.moveEditListCursorUp ws))
 handleEditEvent ws (B.VtyEvent (V.EvKey V.KDown [V.MShift])) = B.continue (Model.Work (Model.moveEditListCursorDown ws))
 handleEditEvent ws (B.VtyEvent (V.EvKey (V.KChar 'f') [])) = B.continue (Model.Work (Model.setCellToSelectedEditListCell ws))
@@ -72,5 +75,9 @@ handleEditEvent ws (B.VtyEvent (V.EvKey (V.KChar 'v') [])) = B.continue (Model.W
 handleEditEvent ws _ = B.continue (Model.Work ws)
 
 handleRunEvent :: Model.WorkState -> B.BrickEvent String Name -> B.EventM Name (Next Model.AppState)
-handleRunEvent ws (B.VtyEvent (V.EvKey (V.KChar '1') [])) = B.continue (Model.Work (Model.setMode ws Model.View))
+handleRunEvent ws (B.VtyEvent (V.EvKey (V.KChar '1') [])) = B.continue (Model.Work newWS)
+  where
+    wsConsole = Model.addConsoleMessage ws "Switched from \"Run\" to \"View\""
+    wsMode = Model.setMode wsConsole Model.View
+    newWS = Model.setBoardToPrev wsMode
 handleRunEvent ws _ = B.continue (Model.Work ws)

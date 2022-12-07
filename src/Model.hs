@@ -132,6 +132,14 @@ setEditList ws el = WS
   , editList = el
   }
 
+toRun :: WorkState -> WorkState
+toRun ws = modifyBoard ws (setBoard ws (V.foldl (\b (coord, bool) -> if bool then M.setElem (C.C { content = C.HighOutput, coordinate = coord }) coord b else M.setElem (C.C { content = C.LowOutput, coordinate = coord }) coord b) b (V.zip outList solvedGraphs)))
+  where
+    b = getBoard ws
+    outList = getOutputList b
+    g = getGraph ws
+    solvedGraphs = V.map (\graph -> S.solve graph) g
+
 setCellAtCursorPosWithCell :: WorkState -> C.CellContent -> WorkState
 setCellAtCursorPosWithCell ws cc = setBoard ws (M.setElem (C.setContent (M.getElem y x b) cc) (y, x) b)
   where
@@ -222,6 +230,9 @@ data ModeState
   | Run
 
 type Board = M.Matrix C.Cell
+
+getOutputList :: Board -> V.Vector Coordinate
+getOutputList b = Prelude.foldl (\v c -> case (C.getContent c) of { UnknownOutput -> V.snoc v (C.getCoordinate c); otherwise -> v }) V.empty b
 
 initBoard :: Board
 initBoard = M.matrix boardSize boardSize (\c -> C.C { content = C.Empty, coordinate = c })
