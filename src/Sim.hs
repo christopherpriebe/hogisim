@@ -14,10 +14,10 @@ type UnaryFunc = Bool -> Bool
 type BinaryFunc = Bool -> Bool -> Bool
 
 
-disconnectErrorMsg = "Disconnect error"
-cycleDetectedErrorMsg = "Cycle"
-multipleInputsError = "Multiple inputs"
-invalidCellError = "Invalid cell"
+disconnectErrorMsg = "Circuit is disconnected at node"
+cycleDetectedErrorMsg = "Circuit has a cycle at node"
+multipleInputsErrorMsg = "Node has multiple inputs"
+invalidCellErrorMsg = "Invalid cell type at node"
 
 
 data Node
@@ -96,18 +96,19 @@ xnorGates =
     ]
 
 
-transform :: M.Matrix C.Cell -> [Either NodeError Node]
+transform :: M.Matrix C.Cell -> [Either [NodeError] Node]
 transform m = [transformCell outputCell m (RD [] DirNone) | outputCell <- outputCells]
     where outputCells = [m ! (x, y) | x <- [0..T.boardSize], y <- [0..T.boardSize], getContent (m ! (x, y)) == C.UnknownOutput]
 
 
-solveCell :: M.Matrix C.Cell -> T.Coordinate -> Either NodeError Bool
+solveCell :: M.Matrix C.Cell -> T.Coordinate -> Either [NodeError] Bool
 solveCell m c = do
     node <- transformCell (m ! c) m (RD [] DirNone)
     return (solve node)
 
 
-transformCell :: C.Cell -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
+transformCell :: C.Cell -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
+transformCell (C.C C.Empty coord) = transformEmpty coord
 transformCell (C.C C.LowSource _) = transformInput False
 transformCell (C.C C.HighSource _) = transformInput True
 transformCell (C.C C.UnknownOutput coord) = transformOutput coord
@@ -159,27 +160,28 @@ transformCell (C.C C.HorizontalXNOROutputRL coord) = transformGateOutput DirLeft
 transformCell (C.C C.HorizontalXNOR coord) = transformGateBody xnorGates coord
 transformCell (C.C _ coord) = transformInvalid coord
 
+transformEmpty :: T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
+transformEmpty coord _ _ = Left [(coord, disconnectErrorMsg)]
 
-transformInvalid :: T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
-transformInvalid coord _ _ = Left (coord, invalidCellError)
+transformInvalid :: T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
+transformInvalid coord _ _ = Left [(coord, invalidCellErrorMsg)]
 
-transformInput :: Bool -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
+transformInput :: Bool -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
 transformInput b _ _ = return (Input b)
 
-transformOutput :: T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
+transformOutput :: T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
 transformOutput coord m rd
     | fromDir rd == DirNone = transformPath [DirUp, DirRight, DirDown, DirLeft, DirNone] coord m rd
     | otherwise = transformPath [DirUp, DirRight, DirDown, DirLeft] coord m rd
 
-transformPath :: [Dir] -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
+transformPath :: [Dir] -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
 transformPath allowedDirs coord m rd
-    | coord `elem` visited rd = Left (coord, cycleDetectedErrorMsg)
-    | fromDir rd `notElem` allowedDirs = Left (coord, disconnectErrorMsg)
+    | coord `elem` visited rd = Left [(coord, cycleDetectedErrorMsg)]
+    | fromDir rd `notElem` allowedDirs = Left [(coord, disconnectErrorMsg)]
     | otherwise = do
-        if numValidNodes == 0
-            then head depNodes
+        if numValidNodes == 0 then Left (concat (lefts depNodes))
         else if numValidNodes > 1
-            then Left (coord, multipleInputsError)
+            then Left [(coord, multipleInputsErrorMsg)]
         else head (filter isRight depNodes)
         where
             v = coord:visited rd
@@ -187,36 +189,36 @@ transformPath allowedDirs coord m rd
             depNodes = [transformCell (m ! (coord `moveTo` depDir)) m (RD v (flipDir depDir)) | depDir <- depDirs]
             numValidNodes = (length . filter isRight) depNodes
 
-transformCross :: T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
+transformCross :: T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
 transformCross coord m rd
-    | coord `elem` visited rd = Left (coord, cycleDetectedErrorMsg)
+    | coord `elem` visited rd = Left [(coord, cycleDetectedErrorMsg)]
     | otherwise = transformCell depCell m (RD v (fromDir rd))
     where
         depCell = m ! (coord `moveAway` fromDir rd)
         v = coord:visited rd
 
-transformUnaryGate :: Dir -> UnaryFunc -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
+transformUnaryGate :: Dir -> UnaryFunc -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
 transformUnaryGate outputDir f coord m rd
-    | fromDir rd /= outputDir = Left (coord, disconnectErrorMsg)
+    | fromDir rd /= outputDir = Left [(coord, disconnectErrorMsg)]
     | otherwise = do
         depNode <- transformCell (m ! (coord `moveAway` fromDir rd)) m (RD v (fromDir rd))
         return (Direct f depNode)
         where
             v = coord:visited rd
 
-transformGateBody :: [C.CellContent] -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
+transformGateBody :: [C.CellContent] -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
 transformGateBody gates coord m rd
-    | fromDir rd == DirLeft || fromDir rd == DirRight = Left (coord, disconnectErrorMsg)
+    | fromDir rd == DirLeft || fromDir rd == DirRight = Left [(coord, disconnectErrorMsg)]
     | otherwise = do
         if getContent depCell `elem` gates then transformCell depCell m (RD v (fromDir rd))
-        else Left (coord, disconnectErrorMsg)
+        else Left [(coord, disconnectErrorMsg)]
         where
             depCell = m ! (coord `moveAway` fromDir rd)
             v = coord:visited rd
 
-transformGateInput :: Dir -> BinaryFunc -> [C.CellContent] -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
+transformGateInput :: Dir -> BinaryFunc -> [C.CellContent] -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
 transformGateInput inputDir f gates coord m rd
-    | fromDir rd == DirLeft || fromDir rd == DirRight = Left (coord, disconnectErrorMsg)
+    | fromDir rd == DirLeft || fromDir rd == DirRight = Left [(coord, disconnectErrorMsg)]
     | otherwise = do
         inputNode <- transformCell (m ! (coord `moveTo` inputDir)) m (RD v (flipDir inputDir))
         if getContent depCell `elem` gates then do
@@ -227,9 +229,9 @@ transformGateInput inputDir f gates coord m rd
             depCell = m ! (coord `moveAway` fromDir rd)
             v = coord:visited rd
 
-transformGateOutput :: Dir -> BinaryFunc -> [C.CellContent] -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
+transformGateOutput :: Dir -> BinaryFunc -> [C.CellContent] -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
 transformGateOutput outputDir f gates coord m rd
-    | fromDir rd /= outputDir = Left (coord, disconnectErrorMsg)
+    | fromDir rd /= outputDir = Left [(coord, disconnectErrorMsg)]
     | otherwise = do
         if upHasGate && downHasGate then do
             depNodeUp <- transformCell depCellUp m (RD v DirDown)
@@ -237,7 +239,7 @@ transformGateOutput outputDir f gates coord m rd
             return (Gate f depNodeUp depNodeDown)
         else if upHasGate then transformCell depCellUp m (RD v DirDown)
         else if downHasGate then  transformCell depCellDown m (RD v DirUp)
-        else Left (coord, disconnectErrorMsg)
+        else Left [(coord, disconnectErrorMsg)]
         where
             depCellUp = m ! (coord `moveTo` DirUp)
             depCellDown = m ! (coord `moveTo` DirDown)

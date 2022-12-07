@@ -15,13 +15,6 @@ toBoard ll = M.matrix size size (\(y, x) -> C { content = ll !! (y - 1) !! (x - 
     size = Prelude.length ll
 
 --ALL BOARDS SQUARES
-empty5x5 = [ [Empty, Empty, Empty, Empty, Empty]
-           , [Empty, Empty, Empty, Empty, Empty]
-           , [Empty, Empty, Empty, Empty, Empty]
-           , [Empty, Empty, Empty, Empty, Empty]
-           , [Empty, Empty, Empty, Empty, Empty]
-           ]
-
 directInOut = [ [Empty, Empty, Empty, Empty, Empty]
               , [Empty, Empty, Empty, Empty, Empty]
               , [Empty, Empty, HighSource, UnknownOutput, Empty]
@@ -42,6 +35,13 @@ andGate = [ [Empty, Empty, Empty, Empty, Empty]
               , [Empty, HighSource, HorizontalANDInputLR, Empty, Empty]
               , [Empty, Empty, Empty, Empty, Empty]
               ]
+
+simpleDisconnect = [ [Empty, Empty, Empty, Empty, Empty]
+                   , [Empty, Empty, Empty, Empty, Empty]
+                   , [Empty, Empty, HorizontalPath, UnknownOutput, Empty]
+                   , [Empty, Empty, Empty, Empty, Empty]
+                   , [Empty, Empty, Empty, Empty, Empty]
+                   ]
 
 testMoveTo = TestList
   [ TestCase (assertEqual "Moving up" (s `moveTo` DirUp) u)
@@ -70,18 +70,14 @@ testMoveAway = TestList
     l = (3, 2)
 
 
-testSolveDirectInputOutput = TestCase (assertEqual "Direct input from high source should be True" True o)
-  where
-    b = toBoard directInOut
-    o = fromRight False (solveCell b (3, 4))
+testSolveDirectInputOutput = TestLabel "An output directly next to a high source" (TestCase (fromRight False (solveCell b (3, 4)) @=? True))
+  where b = toBoard directInOut
 
-testSolvePathInputOutput = TestCase (assertEqual "An output with a path to a high source should be True" True o)
-  where
-    b = toBoard pathInOut
-    o = fromRight False (solveCell b (3, 4))
+testSolvePathInputOutput = TestLabel "An output connected to a high source" (TestCase (fromRight False (solveCell b (3, 4)) @=? True))
+  where b = toBoard pathInOut
 
-testSolveAnd = TestCase (assertEqual "An output from and AND of two high sources should be True" True o)
-  where
-    b = toBoard andGate
-    o = fromRight False (solveCell b (3, 4))
+testSolveAnd = TestLabel "An output from an AND of two high sources" (TestCase (fromRight False (solveCell b (3, 4)) @=? True))
+  where b = toBoard andGate
 
+testSolveSimpleDisconnectThrows = TestCase (isLeft (solveCell b (3, 4)) @? "test")
+  where b = toBoard simpleDisconnect
