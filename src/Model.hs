@@ -169,6 +169,12 @@ setBoardToPrev ws
   | V.length (getPrevBoard ws) > 0 = setPrevBoard (setBoard ws (V.head (getPrevBoard ws))) (V.tail (getPrevBoard ws))
   | otherwise = ws
 
+getNumCircuits :: WorkState -> Int
+getNumCircuits ws = V.length (getGraph ws)
+
+getNumInputs :: WorkState -> Int
+getNumInputs ws = Prelude.foldl (\acc c -> case (C.getContent c) of { C.LowSource -> acc + 1; C.HighSource -> acc + 1; otherwise -> acc }) 0 (getBoard ws)
+
 moveCursorPosRight :: WorkState -> WorkState
 moveCursorPosRight ws = moveCursorPos ws cursorRight
 
@@ -215,7 +221,7 @@ initWorkState = WS
 
 initLoadWorkState :: Board -> WorkState
 initLoadWorkState b = WS
-  { mode = View
+  { mode = Edit
   , board = b
   , prevBoard = initPrevBoard
   , graph = initGraph

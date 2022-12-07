@@ -8,7 +8,7 @@ boardSize :: Int
 boardSize = 30 --TODO: Implement way to pass board size (within reason) from command line
 
 consoleSize :: Int
-consoleSize = 5
+consoleSize = 10
 
 prevBoardSize :: Int
 prevBoardSize = 100
