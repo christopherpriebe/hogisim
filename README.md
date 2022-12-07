@@ -1,5 +1,4 @@
 # Hogisim
-<insert super cool word art here 😎>
 ## High-Level Project Description
 Our group plans to build a digital logic sandbox where users can construct digital circuits using the seven fundamental logic gates: NOT, OR, AND, XOR, NOR, NAND, XNOR.
 The sandbox is empty in the beginning. The user can populate the board with multiple instances of fundamental logic gates, an input node which the user can toggle to either 0 or 1, or an output node that is updated at execution.
@@ -66,3 +65,6 @@ When the interaction between the frontend and backend components is decided, the
 | Project Description and Goals | 11/09/22 |
 | Front-End Board and Movable Logic Objects w/ No Functionality or Connectivity + Back-End Circuit Representation and Solver | 11/19/22 |
 | Fully Functional and Complete | 12/07/22 |
+
+## Known Issues
+- Output nodes cannot be placed adjacent to each other due to the way in which the back-end searches the matrix
