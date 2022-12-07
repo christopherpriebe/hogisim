@@ -36,4 +36,4 @@ test-suite tests
   ghc-options:       -W -threaded
   main-is:           Test.hs
   build-depends:     base >=4.9, HUnit, brick, vector, matrix
-  other-modules:     Model, Model.Cell, Sim, Bool, Types
+  other-modules:     Model, Model.Cell, Sim, Bool, Types, TestSim

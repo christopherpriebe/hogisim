@@ -101,6 +101,12 @@ transform m = [transformCell outputCell m (RD [] DirNone) | outputCell <- output
     where outputCells = [m ! (x, y) | x <- [0..T.boardSize], y <- [0..T.boardSize], getContent (m ! (x, y)) == C.UnknownOutput]
 
 
+solveCell :: M.Matrix C.Cell -> T.Coordinate -> Either NodeError Bool
+solveCell m c = do
+    node <- transformCell (m ! c) m (RD [] DirNone)
+    return (solve node)
+
+
 transformCell :: C.Cell -> M.Matrix C.Cell -> RecursionData -> Either NodeError Node
 transformCell (C.C C.LowSource _) = transformInput False
 transformCell (C.C C.HighSource _) = transformInput True
@@ -241,19 +247,19 @@ transformGateOutput outputDir f gates coord m rd
 
 
 moveTo :: T.Coordinate -> Dir -> T.Coordinate
-moveTo (x, y) DirUp = (x, y + 1)
-moveTo (x, y) DirRight = (x + 1, y)
-moveTo (x, y) DirDown = (x, y - 1)
-moveTo (x, y) DirLeft = (x - 1, y)
-moveTo (x, y) DirNone = (x, y)
+moveTo (y, x) DirUp = (y - 1, x)
+moveTo (y, x) DirRight = (y, x + 1)
+moveTo (y, x) DirDown = (y + 1, x)
+moveTo (y, x) DirLeft = (y, x - 1)
+moveTo (y, x) DirNone = (x, y)
 
 
 moveAway :: T.Coordinate -> Dir -> T.Coordinate
-moveAway (x, y) DirUp = (x, y - 1)
-moveAway (x, y) DirRight = (x - 1, y)
-moveAway (x, y) DirDown = (x, y + 1)
-moveAway (x, y) DirLeft = (x + 1, y)
-moveAway (x, y) DirNone = (x, y)
+moveAway (y, x) DirUp = (y + 1, x)
+moveAway (y, x) DirRight = (y, x - 1)
+moveAway (y, x) DirDown = (y - 1, x)
+moveAway (y, x) DirLeft = (y, x + 1)
+moveAway (y, x) DirNone = (x, y)
 
 
 flipDir :: Dir -> Dir
