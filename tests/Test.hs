@@ -13,4 +13,7 @@ tests = TestList
   , testSolveDirectInputOutput
   , testSolvePathInputOutput
   , testSolveAnd
+  , testSolveHalfAdder
+  , testSolveSimpleDisconnectThrows
+  , testSolveSimpleCycleThrows
   ]
