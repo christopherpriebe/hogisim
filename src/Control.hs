@@ -26,7 +26,9 @@ handleEvent (Model.Menu m) (B.VtyEvent (V.EvKey V.KDown [])) = B.continue
 handleEvent (Model.Menu Model.New) (B.VtyEvent (V.EvKey V.KEnter [])) = B.continue (Model.Work initWorkState)
 handleEvent (Model.Menu Model.Load) (B.VtyEvent (V.EvKey V.KEnter [])) = B.suspendAndResume
   do
-    bRaw <- readFile "out.hgs"
+    putStrLn "Please enter a relative file path and press \"Enter\" key: "
+    filename <- getLine
+    bRaw <- readFile filename
     return (Model.Work (Model.fromFileString bRaw))
 handleEvent (Model.Menu Model.Exit) (B.VtyEvent (V.EvKey V.KEnter [])) = B.halt (Model.Menu Model.Exit)
 
@@ -52,7 +54,14 @@ handleViewEvent ws (B.VtyEvent (V.EvKey (V.KChar '3') [])) = B.continue (Model.W
     wsConsole = Model.addConsoleMessage ws "Switched from \"View\" to \"Run\""
     wsMode = Model.setMode wsConsole Model.Run
     newWS = Model.toRun wsMode
-handleViewEvent ws (B.VtyEvent (V.EvKey (V.KChar 's') [])) = B.suspendAndResume (do {writeFile "out.hgs" (Model.toFileString ws); return (Model.Work ws)})
+    newWS = wsMode
+handleViewEvent ws (B.VtyEvent (V.EvKey (V.KChar 's') [])) = B.suspendAndResume 
+    do 
+        putStrLn "Please enter a file name and press \"Enter\" key: "
+        filename <- getLine;
+        writeFile filename (Model.toFileString ws)
+        -- writeFile "out.hgs" (Model.toFileString ws)
+        return (Model.Work ws)
 handleViewEvent ws _ = B.continue (Model.Work ws)
 
 handleEditEvent :: Model.WorkState -> B.BrickEvent String Name -> B.EventM Name (Next Model.AppState)
