@@ -139,19 +139,27 @@ setCellAtCursorPosWithCell ws cc = setBoard ws (M.setElem (C.setContent (M.getEl
     (y, x) = getCursorPos ws
 
 setCellToSelectedEditListCell :: WorkState -> WorkState
-setCellToSelectedEditListCell ws = setCellAtCursorPosWithCell ws selectedCell
+setCellToSelectedEditListCell ws = modifyBoard ws (setCellAtCursorPosWithCell ws selectedCell)
   where
     selectedCell = getEditListSelectedCell ws
 
 setCellToEmpty :: WorkState -> WorkState
-setCellToEmpty ws = setCellAtCursorPosWithCell ws C.Empty
+setCellToEmpty ws = modifyBoard ws (setCellAtCursorPosWithCell ws C.Empty)
 
 setCellToRotate :: WorkState -> WorkState
-setCellToRotate ws = setBoard ws (M.setElem (C.rotate currCell) (y, x) b)
+setCellToRotate ws = modifyBoard ws (setBoard ws (M.setElem (C.rotate currCell) (y, x) b))
   where
     b = getBoard ws
     (y, x) = getCursorPos ws
     currCell = M.getElem y x b
+
+modifyBoard :: WorkState -> WorkState -> WorkState
+modifyBoard ws wsNew = setPrevBoard wsNew (addPrevBoard (getPrevBoard ws) (getBoard ws))
+
+setBoardToPrev :: WorkState -> WorkState
+setBoardToPrev ws
+  | V.length (getPrevBoard ws) > 0 = setPrevBoard (setBoard ws (V.head (getPrevBoard ws))) (V.tail (getPrevBoard ws))
+  | otherwise = ws
 
 moveCursorPosRight :: WorkState -> WorkState
 moveCursorPosRight ws = moveCursorPos ws cursorRight
@@ -170,6 +178,9 @@ moveCursorPos ws f = setCursorPos ws (f (getCursorPos ws))
 
 addConsoleMessage :: WorkState -> String -> WorkState
 addConsoleMessage ws s = setConsole ws (addToConsole (getConsole ws) s)
+
+addConsoleMessages :: WorkState -> V.Vector String -> WorkState
+addConsoleMessages ws vs = setConsole ws (addMultiToConsole (getConsole ws) vs)
 
 moveEditListCursorUp :: WorkState -> WorkState
 moveEditListCursorUp ws = setEditList ws (BWL.listMoveBy (-1) (getEditList ws))
@@ -194,6 +205,17 @@ initWorkState = WS
   , editList = initEditList
   }
 
+initLoadWorkState :: Board -> WorkState
+initLoadWorkState b = WS
+  { mode = View
+  , board = b
+  , prevBoard = initPrevBoard
+  , graph = initGraph
+  , cursorPos = initCursorPos
+  , console = initConsole
+  , editList = initEditList
+  }
+
 data ModeState
   = View
   | Edit
@@ -203,6 +225,9 @@ type Board = M.Matrix C.Cell
 
 initBoard :: Board
 initBoard = M.matrix boardSize boardSize (\c -> C.C { content = C.Empty, coordinate = c })
+
+addPrevBoard :: V.Vector Board -> Board -> V.Vector Board
+addPrevBoard pb b = V.take prevBoardSize (cons b pb)
 
 initPrevBoard :: V.Vector Board
 initPrevBoard = V.empty
@@ -225,10 +250,18 @@ cursorDown (y, x) = if y < boardSize  then (y + 1, x) else (y, x)
 initCursorPos :: Coordinate
 initCursorPos = (div boardSize 2, div boardSize 2)
 
+--TODO: Do console with take instead of yucky logic
 addToConsole :: V.Vector String -> String -> V.Vector String
 addToConsole c s
   | V.length c < consoleSize = V.snoc c s
   | otherwise = V.tail (V.snoc c s)
+
+addMultiToConsole :: V.Vector String -> V.Vector String -> V.Vector String
+addMultiToConsole c vs
+  | (V.length newC) <= consoleSize = newC
+  | otherwise = V.slice ((V.length newC) - consoleSize) consoleSize newC
+  where
+    newC = c V.++ vs
 
 initConsole :: V.Vector String
 initConsole = V.replicate consoleSize " "
@@ -236,5 +269,8 @@ initConsole = V.replicate consoleSize " "
 initEditList :: BWL.GenericList String V.Vector (C.CellContent, Name)
 initEditList = BWL.list "editList" (C.placeableCellContents) 1
 
---fromFileFormat :: String -> Board
---fromFileFormat s = M.matrix boardSize boardSize (\(y, x) -> )
+toFileString :: WorkState -> String
+toFileString ws = Prelude.foldl (\s cell -> s Prelude.++ [(C.toFileEncoding (C.getContent cell))]) "" (getBoard ws)
+
+fromFileString :: String -> WorkState
+fromFileString s = initLoadWorkState (M.matrix boardSize boardSize (\(y, x) -> C.C {content = C.fromFileEncoding (s!!((y - 1) * boardSize + x - 1)), coordinate = (y, x) }))

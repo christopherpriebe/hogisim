@@ -31,7 +31,7 @@ view' (Work ws) = case (getMode ws) of
   where
     vboard = viewBoard (board ws) (cursorPos ws)
     vcontr = (B.str "Controls:") <=> (B.str "Exit to Menu - \"Esc.\"") <=> (B.str "Switch to \"Edit\" - \"2\"") <=> (B.str "Switch to \"Run\" - \"3\"") <=> (B.str "Move Cursor - (Up | Down | Left | Right) Arrow") <=> (B.str "Save Current View - \"s\" (File will be saved as \"out.hgs\")")
-    econtr = (B.str "Controls:") <=> (B.str "Exit to Menu - \"Esc.\"") <=> (B.str "Switch to \"View\" - \"1\"") <=> (B.str "Move Cursor - (Up | Down | Left | Right) Arrow") <=> (B.str "Change Selection - Shift+(Up Arrow | Down Arrow)") <=> (B.str "Place Selected Cell - \"f\"") <=> (B.str "Clear Cell - \"d\"") <=> (B.str "Rotate Selected Cell - \"r\"")
+    econtr = (B.str "Controls:") <=> (B.str "Exit to Menu - \"Esc.\"") <=> (B.str "Switch to \"View\" - \"1\"") <=> (B.str "Move Cursor - (Up | Down | Left | Right) Arrow") <=> (B.str "Change Selection - Shift+(Up Arrow | Down Arrow)") <=> (B.str "Place Selected Cell - \"f\"") <=> (B.str "Clear Cell - \"d\"") <=> (B.str "Rotate Selected Cell - \"r\"") <=> (B.str "Undo Edit - \"v\"")
     rcontr = (B.str "Controls:") <=> (B.str "Exit to Menu - \"Esc.\"") <=> (B.str "Switch to \"View\" - \"1\"") <=> (B.str "Move Cursor - (Up | Down | Left | Right) Arrow")
     vboardRightBoxNoPad = B.str "stats here"
     vboardRightBox = padRightBox vboardRightBoxNoPad
@@ -45,7 +45,7 @@ padRightBox :: B.Widget Name -> B.Widget Name
 padRightBox w = BWB.border (B.hLimit 50 (B.vLimit boardSize (B.padRight B.Max (B.padBottom B.Max w))))
 
 padConsole :: B.Widget Name -> B.Widget Name
-padConsole w = BWB.border (B.hLimit 50 (B.vLimit 5 (B.padRight B.Max (B.padTop B.Max w))))
+padConsole w = BWB.border (B.hLimit 50 (B.vLimit consoleSize (B.padRight B.Max (B.padTop B.Max w))))
 
 viewBoard :: Board -> Coordinate -> Widget Name
 viewBoard b cp = (BWB.border (viewBoardNoBorder b cp))
