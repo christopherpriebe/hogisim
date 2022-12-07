@@ -10,6 +10,7 @@ main = runTestTTAndExit tests
 tests = TestList
   [ testMoveTo
   , testMoveAway
+  , testMoveToThrowsOnBoundaryError
   , testSolveDirectInputOutput
   , testSolvePathInputOutput
   , testSolveAnd

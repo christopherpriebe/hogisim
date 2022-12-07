@@ -186,22 +186,26 @@ transformPath allowedDirs coord m rd
         where
             v = coord:visited rd
             depDirs = delete (fromDir rd) allowedDirs
-            depNodes = [transformCell (m ! (coord `moveTo` depDir)) m (RD v (flipDir depDir)) | depDir <- depDirs]
+            depCoords = rights (map (moveTo coord m) depDirs)
+            depNodes = [transformCell (m ! depCoord) m (RD v (coord `coordDiff` depCoord))| depCoord <- depCoords]
             numValidNodes = (length . filter isRight) depNodes
 
 transformCross :: T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
 transformCross coord m rd
     | coord `elem` visited rd = Left [(coord, cycleDetectedErrorMsg)]
-    | otherwise = transformCell depCell m (RD v (fromDir rd))
+    | otherwise = do
+        depCoord <- moveAway coord m (fromDir rd)
+        let depCell = m ! depCoord
+        transformCell depCell m (RD v (fromDir rd))
     where
-        depCell = m ! (coord `moveAway` fromDir rd)
         v = coord:visited rd
 
 transformUnaryGate :: Dir -> UnaryFunc -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
 transformUnaryGate outputDir f coord m rd
     | fromDir rd /= outputDir = Left [(coord, disconnectErrorMsg)]
     | otherwise = do
-        depNode <- transformCell (m ! (coord `moveAway` fromDir rd)) m (RD v (fromDir rd))
+        depCoord <- moveAway coord m (fromDir rd)
+        depNode <- transformCell (m ! depCoord) m (RD v (fromDir rd))
         return (Direct f depNode)
         where
             v = coord:visited rd
@@ -210,58 +214,79 @@ transformGateBody :: [C.CellContent] -> T.Coordinate -> M.Matrix C.Cell -> Recur
 transformGateBody gates coord m rd
     | fromDir rd == DirLeft || fromDir rd == DirRight = Left [(coord, disconnectErrorMsg)]
     | otherwise = do
+        depCoord <- moveAway coord m (fromDir rd)
+        let depCell = m ! depCoord
         if getContent depCell `elem` gates then transformCell depCell m (RD v (fromDir rd))
         else Left [(coord, disconnectErrorMsg)]
         where
-            depCell = m ! (coord `moveAway` fromDir rd)
             v = coord:visited rd
 
 transformGateInput :: Dir -> BinaryFunc -> [C.CellContent] -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
 transformGateInput inputDir f gates coord m rd
     | fromDir rd == DirLeft || fromDir rd == DirRight = Left [(coord, disconnectErrorMsg)]
     | otherwise = do
-        inputNode <- transformCell (m ! (coord `moveTo` inputDir)) m (RD v (flipDir inputDir))
-        if getContent depCell `elem` gates then do
-            prevNode <- transformCell depCell m (RD v (fromDir rd))
-            return (Gate f inputNode prevNode)
-        else return (Direct id inputNode)
+        inputCoord <- moveTo coord m inputDir
+        inputNode <- transformCell (m ! inputCoord) m (RD v (flipDir inputDir))
+        let depCoord = moveAway coord m (fromDir rd)
+        if isLeft depCoord then return (Direct id inputNode)
+        else do
+            let depCell = m ! fromRight (0, 0) depCoord
+            if getContent depCell `elem` gates then do
+                prevNode <- transformCell depCell m (RD v (fromDir rd))
+                return (Gate f inputNode prevNode)
+            else return (Direct id inputNode)
         where
-            depCell = m ! (coord `moveAway` fromDir rd)
             v = coord:visited rd
 
 transformGateOutput :: Dir -> BinaryFunc -> [C.CellContent] -> T.Coordinate -> M.Matrix C.Cell -> RecursionData -> Either [NodeError] Node
 transformGateOutput outputDir f gates coord m rd
     | fromDir rd /= outputDir = Left [(coord, disconnectErrorMsg)]
     | otherwise = do
-        if upHasGate && downHasGate then do
-            depNodeUp <- transformCell depCellUp m (RD v DirDown)
-            depNodeDown <- transformCell depCellDown m (RD v DirUp)
-            return (Gate f depNodeUp depNodeDown)
-        else if upHasGate then transformCell depCellUp m (RD v DirDown)
-        else if downHasGate then  transformCell depCellDown m (RD v DirUp)
+        let depCoordUp = moveTo coord m DirUp
+        let depCoordDown = moveTo coord m DirDown
+        if isRight depCoordUp && isRight depCoordDown then do
+            let depCellUp = m ! fromRight (0, 0) depCoordUp
+            let depCellDown = m ! fromRight (0, 0) depCoordDown
+            let upHasGate = getContent depCellUp `elem` gates
+            let downHasGate = getContent depCellDown `elem` gates
+            if upHasGate && downHasGate then do
+                depNodeUp <- transformCell depCellUp m (RD v DirDown)
+                depNodeDown <- transformCell depCellDown m (RD v DirUp)
+                return (Gate f depNodeUp depNodeDown)
+            else if upHasGate then transformCell depCellUp m (RD v DirDown)
+            else if downHasGate then transformCell depCellDown m (RD v DirUp)
+            else Left [(coord, disconnectErrorMsg)]
+        else if isRight depCoordUp then do
+            let depCellUp = m ! fromRight (0, 0) depCoordUp
+            let upHasGate = getContent depCellUp `elem` gates
+            if upHasGate then transformCell depCellUp m (RD v DirDown)
+            else Left [(coord, disconnectErrorMsg)]
+        else if isRight depCoordDown then do
+            let depCellDown = m ! fromRight (0, 0) depCoordDown
+            let downHasGate = getContent depCellDown `elem` gates
+            if downHasGate then transformCell depCellDown m (RD v DirUp)
+            else Left [(coord, disconnectErrorMsg)]
         else Left [(coord, disconnectErrorMsg)]
         where
-            depCellUp = m ! (coord `moveTo` DirUp)
-            depCellDown = m ! (coord `moveTo` DirDown)
-            upHasGate = getContent depCellUp `elem` gates
-            downHasGate = getContent depCellDown `elem` gates
             v = coord:visited rd
 
 
-moveTo :: T.Coordinate -> Dir -> T.Coordinate
-moveTo (y, x) DirUp = (y - 1, x)
-moveTo (y, x) DirRight = (y, x + 1)
-moveTo (y, x) DirDown = (y + 1, x)
-moveTo (y, x) DirLeft = (y, x - 1)
-moveTo (y, x) DirNone = (x, y)
+moveTo :: T.Coordinate -> M.Matrix C.Cell -> Dir -> Either [NodeError] T.Coordinate
+moveTo c@(y, x) _ DirUp = if y == 1 then Left [(c, disconnectErrorMsg)] else return (y - 1, x)
+moveTo c@(y, x) m DirRight = if x == ncols m then Left [(c, disconnectErrorMsg)] else return (y, x + 1)
+moveTo c@(y, x) m DirDown = if y == nrows m then Left [(c, disconnectErrorMsg)] else return (y + 1, x)
+moveTo c@(y, x) _ DirLeft = if x == 1 then Left [(c, disconnectErrorMsg)] else return (y, x - 1)
+moveTo (y, x) _ DirNone = return (x, y)
 
 
-moveAway :: T.Coordinate -> Dir -> T.Coordinate
-moveAway (y, x) DirUp = (y + 1, x)
-moveAway (y, x) DirRight = (y, x - 1)
-moveAway (y, x) DirDown = (y - 1, x)
-moveAway (y, x) DirLeft = (y, x + 1)
-moveAway (y, x) DirNone = (x, y)
+moveAway :: T.Coordinate -> M.Matrix C.Cell -> Dir -> Either [NodeError] T.Coordinate
+moveAway c m d = moveTo c m (flipDir d)
+
+
+indexM :: M.Matrix C.Cell -> Either [NodeError] T.Coordinate -> Either [NodeError] C.Cell
+indexM m c = do
+    if isLeft c then Left (fromLeft [((0, 0), disconnectErrorMsg)] c)
+    else return (m ! fromRight (0, 0) c)
 
 
 flipDir :: Dir -> Dir
@@ -270,3 +295,11 @@ flipDir DirRight = DirLeft
 flipDir DirDown = DirUp
 flipDir DirLeft = DirRight
 flipDir DirNone = DirNone
+
+coordDiff :: T.Coordinate -> T.Coordinate -> Dir
+coordDiff (y1, x1) (y2, x2)
+    | y1 > y2 = DirDown
+    | y1 < y2 = DirUp
+    | x1 > x2 = DirRight
+    | x1 < x2 = DirLeft
+    | otherwise = DirNone
