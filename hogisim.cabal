@@ -1,5 +1,12 @@
+cabal-version:       2.2
 name:                hogisim
 version:             0.0.0.0
+synopsis:            A terminal-based combinational digital logic sandbox.
+description:
+  Hogisim is a terminal UI sandbox for building and simulating
+  combinational digital circuits from the seven fundamental logic
+  gates (NOT, OR, AND, XOR, NOR, NAND, XNOR). Written as a final
+  project for CSE 230 at UCSD, Fall 2022.
 license:             MIT
 license-file:        LICENSE
 author:              Christopher Priebe
@@ -7,17 +14,28 @@ maintainer:          cpriebe@ucsd.edu
 category:            Game
 build-type:          Simple
 extra-source-files:  README.md
-cabal-version:       >=1.10
+tested-with:         GHC == 9.2.8
+homepage:            https://github.com/christopherpriebe/hogisim
+bug-reports:         https://github.com/christopherpriebe/hogisim/issues
+
+source-repository head
+  type:     git
+  location: https://github.com/christopherpriebe/hogisim.git
+
+common warnings
+  ghc-options:       -W -threaded
+  default-language:  Haskell2010
 
 executable hogisim
+  import:              warnings
   main-is:             Main.hs
-  build-depends:       base >=4.9,
-                       vector,
-                       matrix,
-                       mtl,
-                       vty,
-                       brick
   hs-source-dirs:      src
+  build-depends:       base    >=4.14 && <4.17,
+                       vector  >=0.12 && <0.14,
+                       matrix  >=0.3  && <0.4,
+                       mtl     >=2.2  && <2.4,
+                       vty     >=5.33 && <6,
+                       brick   >=0.64 && <1
   other-modules:       Control,
                        Model,
                        Types,
@@ -26,14 +44,14 @@ executable hogisim
                        Sim,
                        Model.Cell
 
-  default-language:    Haskell2010
-  ghc-options:       -W -threaded
-
 test-suite tests
-  default-language: Haskell2010
+  import:            warnings
   type:              exitcode-stdio-1.0
   hs-source-dirs:    tests, src
-  ghc-options:       -W -threaded
   main-is:           Test.hs
-  build-depends:     base >=4.9, HUnit, brick, vector, matrix
+  build-depends:     base    >=4.14 && <4.17,
+                     HUnit   >=1.6  && <1.7,
+                     brick   >=0.64 && <1,
+                     vector  >=0.12 && <0.14,
+                     matrix  >=0.3  && <0.4
   other-modules:     Model, Model.Cell, Sim, Bool, Types, TestSim

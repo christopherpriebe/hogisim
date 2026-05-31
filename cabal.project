@@ -1,0 +1,8 @@
+packages: .
+
+-- Pin Hackage to a date when `brick` was still on the 0.x API (this
+-- project uses pre-1.0 brick) but late enough that the dependencies
+-- supported GHC 9.2. This gives `cabal build` a reproducible solve.
+index-state: 2022-09-15T00:00:00Z
+
+with-compiler: ghc-9.2.8
